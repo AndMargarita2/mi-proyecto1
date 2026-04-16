@@ -1,0 +1,36 @@
+<main class="editor">
+  <header class="editor-topbar">
+    <button class="mini-btn" aria-label="Opciones">
+      <span></span>
+      <span></span>
+    </button>
+    <a class="editor-title" routerLink="/">Presentacion2</a>
+    <div class="top-actions">
+      <button class="present-btn">Presentar</button>
+    </div>
+  </header>
+
+  <section class="workspace">
+    <aside class="left-panel">
+      <button>Diseno</button>
+      <button>Elementos</button>
+      <button>Texto</button>
+      <button>Herramientas</button>
+      <button>Media</button>
+    </aside>
+
+    <section class="canvas-area">
+      <div class="main-canvas" aria-label="Lienzo de diapositiva"></div>
+      <div class="controls">
+        <button aria-label="Diapositiva anterior">&#8249;</button>
+        <button aria-label="Diapositiva siguiente">&#8250;</button>
+      </div>
+    </section>
+
+    <aside class="thumbs">
+      @for (slide of slides; track slide) {
+        <button class="thumb" aria-label="Miniatura de diapositiva {{ slide }}"></button>
+      }
+    </aside>
+  </section>
+</main>

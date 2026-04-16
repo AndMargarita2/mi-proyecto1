@@ -1,0 +1,48 @@
+<main class="catalog-page">
+  <header class="catalog-topbar">
+    <div class="left-group">
+      <button class="menu-btn" aria-label="Abrir menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="logo">D</div>
+      <h1>Catalogo</h1>
+    </div>
+
+    <input
+      class="search"
+      type="text"
+      placeholder="Busca entre los proyectos..."
+      aria-label="Buscar en catalogo"
+    />
+
+    <button class="user-btn">usuario</button>
+  </header>
+
+  <section class="toolbar">
+    <div class="filters">
+      <button class="select-btn">Filtro de categoria</button>
+      <button class="select-btn">Ordenar por</button>
+    </div>
+
+    <div class="actions">
+      <button routerLink="/crear-presentacion">Abrir editor</button>
+      <button>Ver</button>
+      <button>Editar</button>
+      <button>Borrar</button>
+    </div>
+  </section>
+
+  <section class="grid">
+    @for (item of items; track item.title) {
+      <article class="card">
+        <div class="preview"></div>
+        <div class="meta">
+          <p>Autor: {{ item.author }}</p>
+          <p>Titulo: {{ item.title }}</p>
+        </div>
+      </article>
+    }
+  </section>
+</main>
