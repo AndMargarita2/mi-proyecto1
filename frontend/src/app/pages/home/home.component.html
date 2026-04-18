@@ -1,47 +1,48 @@
 <main class="home">
-  <header class="topbar">
-    <button class="menu-btn" aria-label="Abrir menu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-    <div class="logo" aria-label="Logo">D</div>
-    <input
-      class="search"
-      type="text"
-      placeholder="Busca entre los proyectos..."
-      aria-label="Buscar proyecto"
-    />
-    <button class="login-btn">Iniciar sesion</button>
-  </header>
+  <app-header 
+    type="main"
+    logoText="D"
+    searchPlaceholder="Busca entre los proyectos..."
+  ></app-header>
 
   <section class="hero">
     <div class="hero-content">
       <p class="tagline">Tus ideas, proyectadas</p>
       <h1>Crea presentaciones claras y atractivas en minutos</h1>
-      <button class="primary-btn" routerLink="/crear-presentacion">Crea una nueva presentacion</button>
+      <app-button 
+        variant="primary" 
+        size="lg"
+        routerLink="/crear-presentacion"
+      >
+        Crea una nueva presentacion
+      </app-button>
     </div>
     <div class="hero-art" aria-hidden="true"></div>
   </section>
 
   <section class="catalog">
-    <button class="catalog-btn" routerLink="/catalogo">Catalogo</button>
+    <app-button 
+      variant="secondary"
+      routerLink="/catalogo"
+    >
+      Catalogo
+    </app-button>
     <div class="slider-track">
       @for (card of presentationCards; track card.title) {
-        <article class="slide-card">
+        <app-card variant="elevated" [clickable]="true">
           <div class="slide-image"></div>
           <h3>{{ card.title }}</h3>
-        </article>
+        </app-card>
       }
     </div>
   </section>
 
   <section class="highlights">
     @for (item of highlights; track item.title) {
-      <article class="feature-card">
+      <app-card variant="default" [clickable]="true">
         <div class="feature-icon" aria-hidden="true"></div>
         <h2>{{ item.title }}</h2>
-      </article>
+      </app-card>
     }
   </section>
 </main>

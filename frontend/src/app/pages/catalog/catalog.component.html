@@ -1,48 +1,46 @@
 <main class="catalog-page">
-  <header class="catalog-topbar">
-    <div class="left-group">
-      <button class="menu-btn" aria-label="Abrir menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <div class="logo">D</div>
-      <h1>Catalogo</h1>
-    </div>
-
-    <input
-      class="search"
-      type="text"
-      placeholder="Busca entre los proyectos..."
-      aria-label="Buscar en catalogo"
-    />
-
-    <button class="user-btn">usuario</button>
-  </header>
+  <app-header 
+    type="catalog"
+    logoText="D"
+    title="Catalogo"
+    searchPlaceholder="Busca entre los proyectos..."
+  ></app-header>
 
   <section class="toolbar">
     <div class="filters">
-      <button class="select-btn">Filtro de categoria</button>
-      <button class="select-btn">Ordenar por</button>
+      <app-select 
+        [options]="categoryOptions"
+        [selectedValue]="selectedCategory"
+        placeholder="Filtro de categoria"
+        (valueChange)="onCategoryChange($event)"
+      ></app-select>
+      <app-select 
+        [options]="sortOptions"
+        [selectedValue]="selectedSort"
+        placeholder="Ordenar por"
+        (valueChange)="onSortChange($event)"
+      ></app-select>
     </div>
 
     <div class="actions">
-      <button routerLink="/crear-presentacion">Abrir editor</button>
-      <button>Ver</button>
-      <button>Editar</button>
-      <button>Borrar</button>
+      <app-button variant="primary" size="sm" routerLink="/crear-presentacion">
+        Abrir editor
+      </app-button>
+      <app-button variant="secondary" size="sm">Ver</app-button>
+      <app-button variant="secondary" size="sm">Editar</app-button>
+      <app-button variant="danger" size="sm">Borrar</app-button>
     </div>
   </section>
 
   <section class="grid">
     @for (item of items; track item.title) {
-      <article class="card">
+      <app-card variant="elevated" [clickable]="true">
         <div class="preview"></div>
         <div class="meta">
           <p>Autor: {{ item.author }}</p>
           <p>Titulo: {{ item.title }}</p>
         </div>
-      </article>
+      </app-card>
     }
   </section>
 </main>

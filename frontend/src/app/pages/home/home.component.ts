@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../../components/header.component';
+import { ButtonComponent } from '../../components/button.component';
+import { CardComponent } from '../../components/card.component';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  standalone: true,
+  imports: [CommonModule, HeaderComponent, ButtonComponent, CardComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
