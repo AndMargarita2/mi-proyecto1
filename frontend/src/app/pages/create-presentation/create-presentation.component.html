@@ -7,37 +7,209 @@
   ></app-header>
 
   <section class="workspace">
+    <!-- Left Panel -->
     <aside class="left-panel">
-      <app-button variant="ghost" [fullWidth]="true">Diseno</app-button>
-      <app-button variant="ghost" [fullWidth]="true">Elementos</app-button>
-      <app-button variant="ghost" [fullWidth]="true">Texto</app-button>
-      <app-button variant="ghost" [fullWidth]="true">Herramientas</app-button>
-      <app-button variant="ghost" [fullWidth]="true">Media</app-button>
+      <app-button 
+        variant="ghost" 
+        [fullWidth]="true"
+        (onClick)="togglePanel('elementos')"
+        [class.active]="activePanel === 'elementos'"
+        size="sm"
+      >
+        + Elementos
+      </app-button>
+      <app-button 
+        variant="ghost" 
+        [fullWidth]="true"
+        (onClick)="togglePanel('texto')"
+        [class.active]="activePanel === 'texto'"
+        size="sm"
+      >
+        Aᴀ Texto
+      </app-button>
+      <app-button variant="ghost" [fullWidth]="true" size="sm">Diseño</app-button>
+      <app-button variant="ghost" [fullWidth]="true" size="sm">Media</app-button>
     </aside>
 
-    <section class="canvas-area">
-      <div class="main-canvas" aria-label="Lienzo de diapositiva"></div>
-      <div class="controls">
-        <app-button 
-          variant="secondary" 
-          size="sm"
-          ariaLabel="Diapositiva anterior"
-        >
-          &#8249;
-        </app-button>
-        <app-button 
-          variant="secondary" 
-          size="sm"
-          ariaLabel="Diapositiva siguiente"
-        >
-          &#8250;
-        </app-button>
-      </div>
-    </section>
+    <!-- Central area: Canvas + Side panels -->
+    <div class="center-container">
+      <!-- Canvas -->
+      <section class="canvas-area">
+        <div class="main-canvas" #mainCanvas>
+          @for (element of currentSlide.elements; track element.id) {
+            <div 
+              class="element"
+              [ngStyle]="getElementStyle(element)"
+              (click)="selectElement(element)"
+              (dblclick)="deleteElement(element)"
+              (mousedown)="startDrag(element, $event)"
+              [attr.data-type]="element.type"
+            >
+              @if (element.type === 'text') {
+                <span>{{ element.content }}</span>
+              }
+            </div>
+          }
+        </div>
 
+        <div class="controls">
+          <app-button 
+            variant="secondary" 
+            size="sm"
+            ariaLabel="Diapositiva anterior"
+            (onClick)="previousSlide()"
+            [disabled]="currentSlideIndex === 0"
+          >
+            &#8249; Anterior
+          </app-button>
+          <span class="slide-counter">{{ currentSlideIndex + 1 }}/{{ slides.length }}</span>
+          <app-button 
+            variant="secondary" 
+            size="sm"
+            ariaLabel="Diapositiva siguiente"
+            (onClick)="nextSlide()"
+            [disabled]="currentSlideIndex === slides.length - 1"
+          >
+            Siguiente &#8250;
+          </app-button>
+          <app-button 
+            variant="secondary" 
+            size="sm"
+            ariaLabel="Agregar diapositiva"
+            (onClick)="addSlide()"
+          >
+            + Slide
+          </app-button>
+        </div>
+      </section>
+
+      <!-- Side panels (Elementos, Texto, Edición) -->
+      <div class="side-panels-container">
+        @if (activePanel === 'elementos') {
+          <div class="side-menu">
+            <h3>Formas</h3>
+            <app-button 
+              variant="secondary" 
+              size="sm" 
+              [fullWidth]="true"
+              (onClick)="addShapeElement('rectangle')"
+            >
+              Rectángulo
+            </app-button>
+            <app-button 
+              variant="secondary" 
+              size="sm" 
+              [fullWidth]="true"
+              (onClick)="addShapeElement('circle')"
+            >
+              Círculo
+            </app-button>
+          </div>
+        }
+
+        @if (activePanel === 'texto') {
+          <div class="side-menu">
+            <h3>Agregar Texto</h3>
+            <app-input 
+              type="text"
+              [(ngModel)]="newTextContent"
+              placeholder="Escribe tu texto..."
+              ariaLabel="Contenido del texto"
+            ></app-input>
+            <label style="margin-top: 12px; display: block; font-size: 14px;">
+              Tamaño: {{ textInputSize }}px
+              <input 
+                type="range" 
+                [(ngModel)]="textInputSize" 
+                min="12" 
+                max="72" 
+                style="width: 100%; margin-top: 4px;"
+              >
+            </label>
+            <app-button 
+              variant="primary" 
+              [fullWidth]="true"
+              (onClick)="addTextElement()"
+              style="margin-top: 12px;"
+              size="sm"
+            >
+              Agregar
+            </app-button>
+          </div>
+        }
+
+        @if (selectedElement) {
+          <div class="side-menu">
+            <h3>Editar Elemento</h3>
+            <label style="display: block; font-size: 12px; margin-bottom: 8px;">
+              Color:
+              <input 
+                type="color" 
+                [value]="selectedElement.color" 
+                (change)="updateElementColor($event.target.value)"
+                style="width: 100%; height: 30px; border: 1px solid #4b5563; border-radius: 4px; cursor: pointer;"
+              >
+            </label>
+            
+            @if (selectedElement.type === 'shape') {
+              <label style="display: block; font-size: 12px; margin-bottom: 8px;">
+                Ancho: {{ selectedElement.width }}px
+                <input 
+                  type="range" 
+                  [value]="selectedElement.width"
+                  (change)="updateElementSize(+$event.target.value, selectedElement.height)"
+                  min="30" 
+                  max="300" 
+                  style="width: 100%; margin-top: 4px;"
+                >
+              </label>
+              <label style="display: block; font-size: 12px; margin-bottom: 8px;">
+                Alto: {{ selectedElement.height }}px
+                <input 
+                  type="range" 
+                  [value]="selectedElement.height"
+                  (change)="updateElementSize(selectedElement.width, +$event.target.value)"
+                  min="30" 
+                  max="300" 
+                  style="width: 100%; margin-top: 4px;"
+                >
+              </label>
+            }
+
+            <app-button 
+              variant="danger" 
+              [fullWidth]="true"
+              (onClick)="deleteElement(selectedElement)"
+              size="sm"
+              style="margin-top: 12px;"
+            >
+              Eliminar
+            </app-button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Thumbnails Panel -->
     <aside class="thumbs">
-      @for (slide of slides; track slide) {
-        <button class="thumb" [attr.aria-label]="'Miniatura de diapositiva ' + slide"></button>
+      @for (slide of slides; let i = $index; track slide.id) {
+        <button 
+          class="thumb"
+          [class.active]="i === currentSlideIndex"
+          (click)="selectSlide(i)"
+          [attr.aria-label]="'Diapositiva ' + (i + 1)"
+        >
+          <span class="thumb-number">{{ i + 1 }}</span>
+          <span class="element-count">{{ slide.elements.length }}</span>
+          <button 
+            class="delete-thumb"
+            (click)="deleteSlide(i); $event.stopPropagation()"
+            *ngIf="slides.length > 1"
+            aria-label="Eliminar diapositiva"
+          >
+            ✕
+          </button>
+        </button>
       }
     </aside>
   </section>
