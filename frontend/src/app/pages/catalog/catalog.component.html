@@ -33,14 +33,18 @@
   </section>
 
   <section class="grid">
-    @for (item of items; track item.title) {
-      <app-card variant="elevated" [clickable]="true">
-        <div class="preview"></div>
-        <div class="meta">
-          <p>Autor: {{ item.author }}</p>
-          <p>Titulo: {{ item.title }}</p>
-        </div>
-      </app-card>
+    @if (filteredItems.length === 0) {
+      <p class="catalog-empty">No hay presentaciones que coincidan con la búsqueda.</p>
+    } @else {
+      @for (item of filteredItems; track item.title) {
+        <app-card variant="elevated" [clickable]="true">
+          <div class="preview"></div>
+          <div class="meta">
+            <p>Autor: {{ item.author }}</p>
+            <p>Titulo: {{ item.title }}</p>
+          </div>
+        </app-card>
+      }
     }
   </section>
 </main>

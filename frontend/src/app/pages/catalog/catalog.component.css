@@ -123,6 +123,17 @@
   gap: 0.8rem 1rem;
 }
 
+.catalog-empty {
+  grid-column: 1 / -1;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
 .card {
   border: 1px solid rgba(109, 222, 238, 0.9);
   border-radius: 0.4rem;

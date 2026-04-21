@@ -1,40 +1,97 @@
 <main class="editor">
-  <app-header 
+  <app-header
     type="editor"
     logoText="D"
     [title]="presentationTitle"
+    (titleChange)="onPresentationTitleChange($event)"
+    titlePlaceholder="Nombre de la presentación"
     homeLink="/"
-  ></app-header>
-
-  <div class="ribbon-bar">
-    <div class="ribbon-group">
-      <div class="ribbon-buttons">
-        <button class="btn-ribbon" (click)="addSlide()">
-          <span>📄</span>
-          <span>Nuevo Slide</span>
-        </button>
+    [menuExpanded]="editorMenuOpen"
+    (onMenuClick)="toggleEditorMenu()"
+    (onPresentClick)="startPresentation()"
+  >
+    <div editorPrimaryActions class="editor-primary-actions">
+      <div class="ribbon-inicio-inline" role="group" aria-label="Diapositiva">
+        <div class="ribbon-buttons ribbon-buttons-inicio">
+          <button type="button" class="btn-ribbon" (click)="addSlide()" title="Nueva diapositiva" aria-label="Nueva diapositiva">
+            <span class="ribbon-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4.75" y="2.75" width="14.5" height="18.5" rx="1.75" ry="1.75"/>
+                <path d="M12 8.25v7.5M8.25 12h7.5"/>
+              </svg>
+            </span>
+            <span>Nuevo slide</span>
+          </button>
+        </div>
+        <div class="ribbon-slide-bg ribbon-slide-bg-inline" role="group" aria-label="Fondo de la diapositiva actual">
+          <label for="slide-bg-input" class="ribbon-mini-label">Fondo</label>
+          <input
+            id="slide-bg-input"
+            type="color"
+            class="ribbon-color-swatch"
+            [value]="currentSlide.backgroundColor || '#ffffff'"
+            (input)="updateSlideBackground($any($event.target).value)"
+            title="Color de fondo de la diapositiva"
+          />
+        </div>
       </div>
-      <span class="ribbon-group-label">Inicio</span>
-    </div>
 
-    <div class="ribbon-group">
-      <div class="ribbon-buttons">
-        <button class="btn-ribbon" (click)="activePanel = 'texto'" [class.active]="activePanel === 'texto'">
-          <span>Aʙ</span>
+      <div class="ribbon-sep" aria-hidden="true"></div>
+
+      <div class="ribbon-buttons ribbon-buttons-header">
+        <button
+          type="button"
+          class="btn-ribbon"
+          [class.active]="activePanel === 'texto'"
+          [attr.aria-pressed]="activePanel === 'texto'"
+          [attr.aria-controls]="showTextTypographyRibbon() ? 'ribbon-texto-toolbar' : null"
+          aria-label="Insertar y dar estilo a texto"
+          title="Texto"
+          (click)="activePanel = activePanel === 'texto' ? null : 'texto'"
+        >
+          <span class="ribbon-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.5 6.75h15M4.5 12h10M4.5 17.25h12"/>
+            </svg>
+          </span>
           <span>Texto</span>
         </button>
 
         <div class="dropdown-container">
-          <button class="btn-ribbon" (click)="showShapeMenu = !showShapeMenu" [class.active]="showShapeMenu">
-            <span>⬄</span>
-            <span>Formas ▼</span>
+          <button
+            type="button"
+            id="shapes-menu-trigger"
+            class="btn-ribbon"
+            [class.active]="showShapeMenu"
+            [attr.aria-expanded]="showShapeMenu"
+            aria-haspopup="true"
+            aria-controls="shapes-dropdown-panel"
+            aria-label="Insertar formas y flechas"
+            title="Formas"
+            (click)="showShapeMenu = !showShapeMenu"
+          >
+            <span class="ribbon-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <path d="M3 14h7v7H5a2 2 0 0 1-2-2v-5Z"/>
+              </svg>
+            </span>
+            <span>Formas</span>
           </button>
 
-          <div class="shapes-dropdown" *ngIf="showShapeMenu">
+          <div
+            id="shapes-dropdown-panel"
+            class="shapes-dropdown"
+            *ngIf="showShapeMenu"
+            role="menu"
+            aria-labelledby="shapes-menu-trigger"
+          >
             <div class="dropdown-section">
-              <p>Figuras Geométricas</p>
+              <p>Figuras geométricas</p>
               <div class="shapes-grid">
-                <button *ngFor="let s of shapeOptions" (click)="addShapeElement(s.type)" [title]="s.label">
+                <button type="button" *ngFor="let s of shapeOptions" role="menuitem" (click)="addShapeElement(s.type)" [title]="s.label">
                   {{ s.icon }}
                 </button>
               </div>
@@ -42,24 +99,202 @@
             <div class="dropdown-section">
               <p>Flechas</p>
               <div class="shapes-grid">
-                <button *ngFor="let a of arrowOptions" (click)="addShapeElement(a.type)" [title]="a.label">
+                <button type="button" *ngFor="let a of arrowOptions" role="menuitem" (click)="addShapeElement(a.type)" [title]="a.label">
                   {{ a.icon }}
                 </button>
+              </div>
+            </div>
+            <div class="shapes-dropdown-footer" role="group" aria-label="Valores por defecto al insertar formas">
+              <p class="shapes-footer-title">Próxima forma</p>
+              <div class="shapes-default-row">
+                <label for="next-shape-fill">Relleno</label>
+                <input id="next-shape-fill" name="nextShapeFill" type="color" [(ngModel)]="nextShapeFillColor" title="Color de relleno" />
+              </div>
+              <div class="shapes-default-row">
+                <label for="next-arrow-color">Flechas</label>
+                <input id="next-arrow-color" name="nextArrowColor" type="color" [(ngModel)]="nextArrowColor" title="Color de flechas" />
+              </div>
+              <div class="shapes-default-row shapes-opacity-row">
+                <label for="next-shape-opacity">Opacidad</label>
+                <input
+                  id="next-shape-opacity"
+                  type="range"
+                  min="15"
+                  max="100"
+                  [value]="Math.round(nextShapeOpacity * 100)"
+                  (input)="setNextShapeOpacity(+$any($event.target).value / 100)"
+                />
+                <span class="shapes-opacity-value">{{ Math.round(nextShapeOpacity * 100) }}%</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <span class="ribbon-group-label">Insertar</span>
     </div>
-  </div>
+
+    @if (showTextTypographyRibbon()) {
+      <div editorToolbar class="ribbon-bar ribbon-bar-subrow">
+      <div class="ribbon-group ribbon-group-insert">
+        <div class="ribbon-insert-stack">
+          <div id="ribbon-texto-toolbar" class="ribbon-texto-toolbar" role="group" aria-label="Estilo de texto">
+            <div class="ribbon-texto-field">
+              <label for="ribbon-font-size">Tamaño</label>
+              <input
+                id="ribbon-font-size"
+                type="number"
+                min="8"
+                max="120"
+                class="ribbon-num-input"
+                [value]="getTextFontSize()"
+                (change)="setTextFontSize(+$any($event.target).value)"
+                (input)="setTextFontSize(+$any($event.target).value)"
+              />
+            </div>
+            <div class="ribbon-texto-field ribbon-texto-color-field">
+              <label for="ribbon-text-color">Color</label>
+              <input
+                id="ribbon-text-color"
+                type="color"
+                class="ribbon-color-swatch sm"
+                [value]="getTextColor()"
+                (input)="setTextColor($any($event.target).value)"
+              />
+            </div>
+            <div class="ribbon-texto-seg" role="group" aria-label="Negrita">
+              <button
+                type="button"
+                class="ribbon-toggle"
+                [class.active]="isTextBold()"
+                [attr.aria-pressed]="isTextBold()"
+                title="Negrita"
+                (click)="toggleTextBold()"
+              >
+                <span class="ribbon-toggle-label">B</span>
+              </button>
+            </div>
+            <div class="ribbon-texto-seg" role="group" aria-label="Alineación">
+              <button
+                type="button"
+                class="ribbon-toggle"
+                [class.active]="getTextAlign() === 'left'"
+                [attr.aria-pressed]="getTextAlign() === 'left'"
+                title="Alinear a la izquierda"
+                (click)="setTextAlign('left')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h14"/></svg>
+              </button>
+              <button
+                type="button"
+                class="ribbon-toggle"
+                [class.active]="getTextAlign() === 'center'"
+                [attr.aria-pressed]="getTextAlign() === 'center'"
+                title="Centrar"
+                (click)="setTextAlign('center')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M7 12h10M5 18h14"/></svg>
+              </button>
+              <button
+                type="button"
+                class="ribbon-toggle"
+                [class.active]="getTextAlign() === 'right'"
+                [attr.aria-pressed]="getTextAlign() === 'right'"
+                title="Alinear a la derecha"
+                (click)="setTextAlign('right')"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M10 12h10M6 18h14"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <span class="ribbon-group-label">Estilo</span>
+      </div>
+      </div>
+    }
+  </app-header>
+
+  @if (editorMenuOpen) {
+    <div class="editor-menu-backdrop" (click)="editorMenuOpen = false" aria-hidden="true"></div>
+  }
+  <aside
+    id="editor-slide-menu"
+    class="editor-slide-menu"
+    [class.is-open]="editorMenuOpen"
+    role="dialog"
+    [attr.aria-modal]="editorMenuOpen ? 'true' : null"
+    [attr.aria-hidden]="!editorMenuOpen"
+    aria-label="Menú del editor"
+  >
+    <div class="editor-slide-menu-header">
+      <span class="editor-slide-menu-title">Editor</span>
+      <button type="button" class="editor-menu-close" aria-label="Cerrar menú" (click)="editorMenuOpen = false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="editor-slide-menu-body">
+      <nav class="editor-slide-menu-nav" aria-label="Navegación principal">
+        <a routerLink="/catalogo" class="editor-menu-link" (click)="editorMenuOpen = false">Catálogo</a>
+
+        @if (lastPresentationMeta) {
+          <div class="editor-menu-section">
+            <span class="editor-menu-section-title">Última presentación en el editor</span>
+            <button
+              type="button"
+              class="editor-menu-link editor-menu-link-button"
+              (click)="openLastPresentationFromMenu()"
+            >
+              {{ lastPresentationMeta.title }}
+            </button>
+            @if (lastPresentationDateLabel()) {
+              <span class="editor-menu-muted">{{ lastPresentationDateLabel() }}</span>
+            }
+          </div>
+        }
+
+        <a
+          routerLink="/"
+          [queryParams]="{ login: '1' }"
+          class="editor-menu-link"
+          (click)="editorMenuOpen = false"
+        >Iniciar sesión</a>
+
+        <a routerLink="/" class="editor-menu-link editor-menu-link-secondary" (click)="editorMenuOpen = false">Ir al inicio</a>
+      </nav>
+
+      <div class="editor-menu-search" role="search">
+        <label class="editor-menu-search-label" for="editor-menu-search-input">Buscar presentación</label>
+        <div class="editor-menu-search-row">
+          <input
+            id="editor-menu-search-input"
+            type="search"
+            name="editorMenuSearch"
+            [(ngModel)]="menuSearchQuery"
+            placeholder="Título o autor en el catálogo..."
+            autocomplete="off"
+            (keyup.enter)="runMenuSearch()"
+          />
+          <button type="button" class="editor-menu-search-btn" (click)="runMenuSearch()">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <section class="workspace">
     <aside class="thumbs-panel">
       @for (slide of slides; let i = $index; track slide.id) {
         <div class="thumb" [class.active]="i === currentSlideIndex" (click)="selectSlide(i)">
-          <span style="color: white; font-size: 12px;">{{ i + 1 }}</span>
-          <button class="delete-thumb" (click)="deleteSlide(i); $event.stopPropagation()" *ngIf="slides.length > 1">✕</button>
+          <span class="thumb-index">{{ i + 1 }}</span>
+          <button
+            type="button"
+            class="delete-thumb"
+            *ngIf="slides.length > 1"
+            title="Eliminar diapositiva"
+            aria-label="Eliminar diapositiva"
+            (click)="deleteSlide(i); $event.stopPropagation()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+            </svg>
+          </button>
         </div>
       }
     </aside>
@@ -70,7 +305,12 @@
         <button (click)="addTextElement(); activePanel = null">Ok</button>
       </div>
 
-      <div class="main-canvas" #mainCanvas (click)="selectedElement = null; showShapeMenu = false">
+      <div
+        class="main-canvas"
+        #mainCanvas
+        [style.background-color]="currentSlide.backgroundColor || '#ffffff'"
+        (click)="selectedElement = null; showShapeMenu = false"
+      >
         @for (element of currentSlide.elements; track element.id) {
           <div 
             class="element"
@@ -83,7 +323,7 @@
             [attr.data-type]="element.type"
             [attr.data-content]="element.content" 
           >
-            <span *ngIf="element.type === 'text'">{{ element.content }}</span>
+            <span *ngIf="element.type === 'text'" [style.text-align]="element.textAlign || 'left'">{{ element.content }}</span>
             <span *ngIf="element.type === 'shape' && element.content.includes('arrow')">
               {{ getArrowIcon(element.content) }}
             </span>
@@ -95,34 +335,147 @@
 
     <aside class="side-panels-container">
       @if (selectedElement) {
-        <div class="side-menu-section">
-          <h3>Formato de Objeto</h3>
-          <div class="control-group">
-            <div class="control-label"><span>Color</span></div>
-            <input type="color" [value]="selectedElement.color" (input)="updateElementColor($any($event.target).value)">
-            
-            <div class="control-label">
-              <span>Ancho</span>
-              <span>{{ selectedElement.width }}px</span>
+        <div class="side-menu-section format-panel">
+          <h3 class="format-panel-heading">
+            <svg class="format-heading-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+            </svg>
+            Formato de objeto
+          </h3>
+          <div class="format-card">
+            <div class="format-field">
+              <div class="format-field-label">
+                <span class="format-field-icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.53 16H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m3 10v2a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-2h-7Zm-6-2H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1.586a1 1 0 0 0-.707.293l-1.414 1.414A1 1 0 0 1 10.586 16H9.53Z"/>
+                  </svg>
+                </span>
+                <span>Color</span>
+              </div>
+              <input type="color" class="format-color-input" [value]="selectedElement.color" (input)="updateElementColor($any($event.target).value)">
             </div>
-            <input type="range" min="10" max="900" [value]="selectedElement.width" 
-                   (input)="updateElementSize(+$any($event.target).value, selectedElement.height)">
 
-            <div class="control-label">
-              <span>Alto</span>
-              <span>{{ selectedElement.height }}px</span>
+            @if (selectedElement.type === 'text') {
+              <div class="format-field">
+                <div class="format-field-label format-field-label-row">
+                  <span class="format-field-label-start">
+                    <span class="format-field-icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.75h15M4.5 12h10M4.5 17.25h12"/></svg>
+                    </span>
+                    <span>Tamaño</span>
+                  </span>
+                  <span class="format-value">{{ getTextFontSize() }}px</span>
+                </div>
+                <input type="range" min="8" max="120" [value]="getTextFontSize()"
+                       (input)="setTextFontSize(+$any($event.target).value)">
+              </div>
+              <div class="format-field format-field-inline">
+                <span class="format-field-label">Estilo</span>
+                <div class="format-inline-btns">
+                  <button type="button" class="ribbon-toggle sm" [class.active]="isTextBold()" [attr.aria-pressed]="isTextBold()" title="Negrita" (click)="toggleTextBold()"><span class="ribbon-toggle-label">B</span></button>
+                  <button type="button" class="ribbon-toggle sm" [class.active]="getTextAlign() === 'left'" [attr.aria-pressed]="getTextAlign() === 'left'" title="Izquierda" (click)="setTextAlign('left')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h14"/></svg>
+                  </button>
+                  <button type="button" class="ribbon-toggle sm" [class.active]="getTextAlign() === 'center'" [attr.aria-pressed]="getTextAlign() === 'center'" title="Centro" (click)="setTextAlign('center')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M7 12h10M5 18h14"/></svg>
+                  </button>
+                  <button type="button" class="ribbon-toggle sm" [class.active]="getTextAlign() === 'right'" [attr.aria-pressed]="getTextAlign() === 'right'" title="Derecha" (click)="setTextAlign('right')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M10 12h10M6 18h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+
+            <div class="format-field">
+              <div class="format-field-label format-field-label-row">
+                <span class="format-field-label-start">
+                  <span class="format-field-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+                    </svg>
+                  </span>
+                  <span>Ancho</span>
+                </span>
+                <span class="format-value">{{ selectedElement.width }}px</span>
+              </div>
+              <input type="range" min="10" max="900" [value]="selectedElement.width"
+                     (input)="updateElementSize(+$any($event.target).value, selectedElement.height)">
             </div>
-            <input type="range" min="10" max="600" [value]="selectedElement.height" 
-                   (input)="updateElementSize(selectedElement.width, +$any($event.target).value)">
 
-            <button class="btn-delete" (click)="deleteElement(selectedElement)">Eliminar</button>
+            <div class="format-field">
+              <div class="format-field-label format-field-label-row">
+                <span class="format-field-label-start">
+                  <span class="format-field-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/>
+                    </svg>
+                  </span>
+                  <span>Alto</span>
+                </span>
+                <span class="format-value">{{ selectedElement.height }}px</span>
+              </div>
+              <input type="range" min="10" max="600" [value]="selectedElement.height"
+                     (input)="updateElementSize(selectedElement.width, +$any($event.target).value)">
+            </div>
+
+            <div class="format-actions">
+              <button
+                type="button"
+                class="btn-delete-icon"
+                title="Eliminar elemento"
+                aria-label="Eliminar elemento del lienzo"
+                (click)="deleteElement(selectedElement)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       } @else {
-        <div style="text-align: center; color: #64748b; padding-top: 2rem;">
+        <div class="side-empty-hint">
           <small>Selecciona un elemento para editar sus propiedades</small>
         </div>
       }
     </aside>
   </section>
+
+  @if (presentationMode) {
+    <div
+      class="presentation-overlay"
+      #presentationRoot
+      tabindex="-1"
+      role="dialog"
+      [attr.aria-label]="'Modo presentación, diapositiva ' + (currentSlideIndex + 1) + ' de ' + slides.length"
+    >
+      <div class="presentation-chrome">
+        <span class="presentation-counter">{{ currentSlideIndex + 1 }} / {{ slides.length }}</span>
+        <div class="presentation-actions">
+          <button type="button" class="presentation-nav" (click)="previousSlide()">Anterior</button>
+          <button type="button" class="presentation-nav" (click)="nextSlide()">Siguiente</button>
+          <button type="button" class="presentation-exit" (click)="endPresentation()">Salir</button>
+        </div>
+      </div>
+      <div class="presentation-stage-outer">
+        <div class="presentation-stage" [ngStyle]="getPresentationStageWrapperStyle()">
+          @for (element of currentSlide.elements; track element.id) {
+            <div
+              class="element presentation-element"
+              [ngStyle]="getPresentationElementStyle(element)"
+              [attr.data-type]="element.type"
+              [attr.data-content]="element.content"
+            >
+              <span *ngIf="element.type === 'text'" [style.text-align]="element.textAlign || 'left'">{{ element.content }}</span>
+              <span *ngIf="element.type === 'shape' && element.content.includes('arrow')">
+                {{ getArrowIcon(element.content) }}
+              </span>
+              <span *ngIf="element.type === 'shape' && !element.content.includes('arrow')"></span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
 </main>

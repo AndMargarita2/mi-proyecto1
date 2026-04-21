@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { HeaderComponent } from '../../components/header.component';
 import { ButtonComponent } from '../../components/button.component';
 import { CardComponent } from '../../components/card.component';
@@ -17,7 +18,9 @@ interface CatalogItem {
   templateUrl: './catalog.component.html',
   styleUrl: './catalog.component.css'
 })
-export class CatalogComponent {
+export class CatalogComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+
   protected readonly items: CatalogItem[] = [
     { title: 'Como empezar a usar Linux', author: 'Equipo Tecnologia' },
     { title: 'Procesadores ARM vs x86', author: 'Daniel Ortega' },
@@ -42,6 +45,23 @@ export class CatalogComponent {
 
   protected selectedCategory: string | number = 'all';
   protected selectedSort: string | number = 'recent';
+  protected filteredItems: CatalogItem[] = [];
+
+  ngOnInit(): void {
+    this.filteredItems = this.items;
+    this.route.queryParamMap.subscribe(params => {
+      const q = (params.get('q') ?? '').trim().toLowerCase();
+      if (!q) {
+        this.filteredItems = this.items;
+        return;
+      }
+      this.filteredItems = this.items.filter(
+        i =>
+          i.title.toLowerCase().includes(q) ||
+          i.author.toLowerCase().includes(q)
+      );
+    });
+  }
 
   onCategoryChange(value: string | number): void {
     this.selectedCategory = value;
