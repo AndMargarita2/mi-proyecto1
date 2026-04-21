@@ -75,16 +75,19 @@
           <div 
             class="element"
             cdkDrag
-            [cdkDragFreeDragPosition]="{x: element.x, y: element.y}"
+            [style.left.px]="element.x"
+            [style.top.px]="element.y"
             (cdkDragEnded)="onDragEnd($event, element)"
             [ngStyle]="getElementStyle(element)"
             (click)="selectElement(element); $event.stopPropagation()"
             [attr.data-type]="element.type"
             [attr.data-content]="element.content" 
           >
-            <span>
-              {{ element.type === 'text' ? element.content : (element.content.includes('arrow') ? getArrowIcon(element.content) : '') }}
+            <span *ngIf="element.type === 'text'">{{ element.content }}</span>
+            <span *ngIf="element.type === 'shape' && element.content.includes('arrow')">
+              {{ getArrowIcon(element.content) }}
             </span>
+            <span *ngIf="element.type === 'shape' && !element.content.includes('arrow')"></span>
           </div>
         }
       </div>

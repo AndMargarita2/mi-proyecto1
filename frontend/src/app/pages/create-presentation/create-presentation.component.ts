@@ -130,10 +130,19 @@ export class CreatePresentationComponent {
     }
   }
 
+  // Al terminar el drag, calculamos la posición real basada en el evento
   onDragEnd(event: CdkDragEnd, element: Element): void {
-    const position = event.source.getFreeDragPosition();
-    element.x = position.x;
-    element.y = position.y;
+    // Obtener el desplazamiento delta del movimiento de arrastre
+    const delta = event.distance;
+    
+    // Actualizar la posición del elemento con el desplazamiento
+    if (delta) {
+      element.x = element.x + delta.x;
+      element.y = element.y + delta.y;
+    }
+    
+    // Resetear el drag para que no se acumule el transform
+    event.source.reset();
   }
 
   // --- GESTIÓN DE ESTILOS DINÁMICOS ---
@@ -149,17 +158,30 @@ export class CreatePresentationComponent {
       height: element.height + 'px',
       position: 'absolute',
       zIndex: element.selected ? 10 : 1,
-      backgroundColor: element.type === 'shape' ? elementColor : 'transparent',
       border: element.selected ? '2px solid #2563eb' : 'none',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'border 0.2s ease'
+      transition: 'border 0.2s ease',
+      backgroundColor: 'transparent',
+      color: elementColor
     };
 
     if (element.type === 'shape') {
       let clipPath = 'none';
       const shape = element.content;
+
+      // Si es una flecha, no usar clip-path ni fondo
+      const isArrow = shape && shape.startsWith && shape.startsWith('arrow');
+      if (isArrow) {
+        return {
+          ...baseStyle,
+          fontSize: Math.max(element.width, element.height) * 0.7 + 'px',
+          color: elementColor,
+          backgroundColor: 'transparent',
+          borderRadius: '0',
+        };
+      }
 
       // Definición de formas geométricas mediante CSS Clip-Path
       switch (shape) {
@@ -172,14 +194,12 @@ export class CreatePresentationComponent {
         case 'ellipse': baseStyle['borderRadius'] = '50%'; break;
       }
 
-      const isArrow = shape && shape.startsWith && shape.startsWith('arrow');
-
       return {
         ...baseStyle,
         clipPath: clipPath,
         borderRadius: shape === 'circle' ? '50%' : (shape === 'pill' ? '50px' : baseStyle['borderRadius'] || '0'),
-        backgroundColor: isArrow ? 'transparent' : elementColor,
-        color: isArrow ? elementColor : 'inherit'
+        backgroundColor: elementColor,
+        color: 'inherit'
       };
     }
 
