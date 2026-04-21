@@ -1,9 +1,8 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DragDropModule, CdkDragEnd } from '@angular/cdk/drag-drop';
 import { HeaderComponent } from '../../components/header.component';
-import { ButtonComponent } from '../../components/button.component';
-import { InputComponent } from '../../components/input.component';
 
 interface Slide {
   id: number;
@@ -26,7 +25,12 @@ interface Element {
 @Component({
   selector: 'app-create-presentation',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, ButtonComponent, InputComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DragDropModule,
+    HeaderComponent
+  ],
   templateUrl: './create-presentation.component.html',
   styleUrl: './create-presentation.component.css'
 })
@@ -40,99 +44,76 @@ export class CreatePresentationComponent {
     { id: 3, elements: [] },
     { id: 4, elements: [] }
   ];
-  
+
   protected currentSlideIndex = 0;
-  protected activePanel: 'elementos' | 'texto' | null = null;
   protected selectedElement: Element | null = null;
   protected newTextContent = '';
-  protected textInputSize = 16;
+  protected textInputSize = 24;
 
-  // Drag state
-  private isDragging = false;
-  private dragStartX = 0;
-  private dragStartY = 0;
-  private dragElement: Element | null = null;
-  private dragOffsetX = 0;
-  private dragOffsetY = 0;
+  // Control de interfaz
+  protected activePanel: 'elementos' | 'texto' | null = null;
+  protected showShapeMenu = false;
+
+  // Catálogo de Formas
+  protected shapeOptions = [
+    { type: 'rectangle', icon: '⬜', label: 'Rectángulo' },
+    { type: 'circle', icon: '⚪', label: 'Círculo' },
+    { type: 'triangle', icon: '▲', label: 'Triángulo' },
+    { type: 'diamond', icon: '💎', label: 'Diamante' },
+    { type: 'hexagon', icon: '⬢', label: 'Hexágono' },
+    { type: 'star', icon: '⭐', label: 'Estrella' },
+    { type: 'pentagon', icon: '⬠', label: 'Pentágono' },
+    { type: 'ellipse', icon: '⬭', label: 'Elipse' },
+    { type: 'parallelogram', icon: '▱', label: 'Paralelogramo' },
+    { type: 'pill', icon: '💊', label: 'Píldora' }
+  ];
+
+  // Catálogo de Flechas
+  protected arrowOptions = [
+    { type: 'arrow-right', icon: '→', label: 'Derecha' },
+    { type: 'arrow-left', icon: '←', label: 'Izquierda' },
+    { type: 'arrow-up', icon: '↑', label: 'Arriba' },
+    { type: 'arrow-down', icon: '↓', label: 'Abajo' },
+    { type: 'arrow-both', icon: '↔', label: 'Doble' }
+  ];
 
   get currentSlide(): Slide {
     return this.slides[this.currentSlideIndex];
   }
 
-  constructor() {
-    document.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    document.addEventListener('mouseup', (e) => this.onMouseUp(e));
-  }
+  // --- LÓGICA DE ELEMENTOS ---
 
-  // Panel actions
-  togglePanel(panel: 'elementos' | 'texto'): void {
-    this.activePanel = this.activePanel === panel ? null : panel;
-  }
-
-  // Drag and drop
-  startDrag(element: Element, event: MouseEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    this.isDragging = true;
-    this.dragElement = element;
-    this.dragStartX = event.clientX;
-    this.dragStartY = event.clientY;
-    this.dragOffsetX = element.x;
-    this.dragOffsetY = element.y;
-    
-    this.selectElement(element);
-  }
-
-  private onMouseMove(event: MouseEvent): void {
-    if (!this.isDragging || !this.dragElement) return;
-
-    const deltaX = event.clientX - this.dragStartX;
-    const deltaY = event.clientY - this.dragStartY;
-
-    this.dragElement.x = Math.max(0, this.dragOffsetX + deltaX);
-    this.dragElement.y = Math.max(0, this.dragOffsetY + deltaY);
-  }
-
-  private onMouseUp(event: MouseEvent): void {
-    this.isDragging = false;
-    this.dragElement = null;
-  }
-
-  // Element management
   addTextElement(): void {
     if (!this.newTextContent.trim()) return;
-    
     const element: Element = {
       id: `text-${Date.now()}`,
       type: 'text',
-      x: 50,
-      y: 50,
-      width: 200,
-      height: 40,
+      x: 100,
+      y: 100,
+      width: 250,
+      height: 60,
       content: this.newTextContent,
       fontSize: this.textInputSize,
       color: '#000000'
     };
-    
     this.currentSlide.elements.push(element);
     this.newTextContent = '';
-    this.textInputSize = 16;
   }
 
-  addShapeElement(shape: 'rectangle' | 'circle'): void {
+  addShapeElement(shapeType: string): void {
+    const isArrow = shapeType.startsWith('arrow');
     const element: Element = {
       id: `shape-${Date.now()}`,
       type: 'shape',
-      x: 100,
-      y: 100,
-      width: shape === 'rectangle' ? 150 : 100,
-      height: shape === 'rectangle' ? 100 : 100,
-      content: shape,
-      color: '#3b82f6'
+      x: 150,
+      y: 150,
+      width: 120,
+      height: 120,
+      content: shapeType,
+      color: isArrow ? '#3b82f6' : '#6366f1' // Color distinto para flechas por defecto
     };
-    
     this.currentSlide.elements.push(element);
+    this.showShapeMenu = false;
   }
 
   selectElement(element: Element): void {
@@ -149,12 +130,79 @@ export class CreatePresentationComponent {
     }
   }
 
-  updateElementPosition(element: Element, dx: number, dy: number): void {
-    element.x += dx;
-    element.y += dy;
+  onDragEnd(event: CdkDragEnd, element: Element): void {
+    const position = event.source.getFreeDragPosition();
+    element.x = position.x;
+    element.y = position.y;
   }
 
-  // Slide management
+  // --- GESTIÓN DE ESTILOS DINÁMICOS ---
+
+  getElementStyle(element: Element): any {
+    // Definir color por defecto si no existe
+    const elementColor = element.color || '#3b82f6'; // Azul por defecto
+
+    const baseStyle: any = {
+      left: element.x + 'px',
+      top: element.y + 'px',
+      width: element.width + 'px',
+      height: element.height + 'px',
+      position: 'absolute',
+      zIndex: element.selected ? 10 : 1,
+      backgroundColor: element.type === 'shape' ? elementColor : 'transparent',
+      border: element.selected ? '2px solid #2563eb' : 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'border 0.2s ease'
+    };
+
+    if (element.type === 'shape') {
+      let clipPath = 'none';
+      const shape = element.content;
+
+      // Definición de formas geométricas mediante CSS Clip-Path
+      switch (shape) {
+        case 'triangle': clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)'; break;
+        case 'diamond': clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'; break;
+        case 'hexagon': clipPath = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'; break;
+        case 'star': clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'; break;
+        case 'pentagon': clipPath = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'; break;
+        case 'parallelogram': clipPath = 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)'; break;
+        case 'ellipse': baseStyle['borderRadius'] = '50%'; break;
+      }
+
+      const isArrow = shape && shape.startsWith && shape.startsWith('arrow');
+
+      return {
+        ...baseStyle,
+        clipPath: clipPath,
+        borderRadius: shape === 'circle' ? '50%' : (shape === 'pill' ? '50px' : baseStyle['borderRadius'] || '0'),
+        backgroundColor: isArrow ? 'transparent' : elementColor,
+        color: isArrow ? elementColor : 'inherit'
+      };
+    }
+
+    if (element.type === 'text') {
+      return {
+        ...baseStyle,
+        color: elementColor,
+        fontSize: element.fontSize + 'px',
+        backgroundColor: 'transparent'
+      };
+    }
+
+    return baseStyle;
+  }
+
+  getArrowIcon(shapeType: string): string {
+    const allOptions = [...this.shapeOptions, ...this.arrowOptions];
+    const found = allOptions.find(opt => opt.type === shapeType);
+    return found ? found.icon : '';
+  }
+
+  // --- GESTIÓN DE DIAPOSITIVAS ---
+
   previousSlide(): void {
     if (this.currentSlideIndex > 0) {
       this.currentSlideIndex--;
@@ -170,7 +218,7 @@ export class CreatePresentationComponent {
   }
 
   addSlide(): void {
-    const newId = Math.max(...this.slides.map(s => s.id)) + 1;
+    const newId = this.slides.length > 0 ? Math.max(...this.slides.map(s => s.id)) + 1 : 1;
     this.slides.push({ id: newId, elements: [] });
   }
 
@@ -188,41 +236,7 @@ export class CreatePresentationComponent {
     this.selectedElement = null;
   }
 
-  getElementStyle(element: Element): any {
-    const baseStyle = {
-      left: element.x + 'px',
-      top: element.y + 'px',
-      width: element.width + 'px',
-      height: element.height + 'px',
-      border: element.selected ? '2px solid #2563eb' : '1px solid #ccc'
-    };
-
-    if (element.type === 'shape') {
-      const shape = element.content;
-      if (shape === 'circle') {
-        return {
-          ...baseStyle,
-          backgroundColor: element.color,
-          borderRadius: '50%'
-        };
-      } else if (shape === 'rectangle') {
-        return {
-          ...baseStyle,
-          backgroundColor: element.color,
-          borderRadius: '4px'
-        };
-      }
-    } else if (element.type === 'text') {
-      return {
-        ...baseStyle,
-        backgroundColor: 'transparent',
-        color: element.color,
-        fontSize: element.fontSize + 'px',
-        padding: '4px'
-      };
-    }
-    return baseStyle;
-  }
+  // --- ACTUALIZACIÓN DE PROPIEDADES ---
 
   updateElementColor(color: string): void {
     if (this.selectedElement) {
@@ -235,5 +249,9 @@ export class CreatePresentationComponent {
       this.selectedElement.width = typeof width === 'string' ? parseInt(width, 10) : width;
       this.selectedElement.height = typeof height === 'string' ? parseInt(height, 10) : height;
     }
+  }
+
+  togglePanel(panel: 'elementos' | 'texto'): void {
+    this.activePanel = this.activePanel === panel ? null : panel;
   }
 }
