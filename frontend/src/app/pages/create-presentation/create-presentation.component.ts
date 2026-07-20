@@ -40,6 +40,25 @@ interface Element {
   textAlign?: 'left' | 'center' | 'right';
   opacity?: number;
   selected?: boolean;
+  /** Color del contorno de la forma (0 = sin contorno vía strokeWidth). */
+  strokeColor?: string;
+  /** Grosor del contorno en px; 0 significa sin contorno. */
+  strokeWidth?: number;
+  strokeStyle?: 'solid' | 'dashed' | 'dotted';
+  /** Si es false, la forma se dibuja sin relleno (solo contorno). Default: true. */
+  hasFill?: boolean;
+}
+
+/** Descripción de cómo dibujar el SVG de una forma ya colocada en el lienzo. */
+interface ShapeRenderData {
+  kind: 'rect' | 'ellipse' | 'polygon';
+  rectAttrs?: { x: number; y: number; width: number; height: number; rx: number };
+  ellipseAttrs?: { cx: number; cy: number; rx: number; ry: number };
+  points?: string;
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  dashArray: string;
 }
 
 @Component({
@@ -62,6 +81,10 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   @ViewChild('mainCanvas') mainCanvas!: ElementRef;
   @ViewChild('presentationRoot') presentationRoot?: ElementRef<HTMLElement>;
+  @ViewChild('imageFileInput') imageFileInput!: ElementRef<HTMLInputElement>;
+
+  /** Máximo lado (ancho o alto) en px al insertar una imagen nueva; se preserva su relación de aspecto. */
+  private static readonly MAX_IMAGE_INSERT_SIZE = 360;
 
   /** Expuesto para plantilla (porcentaje de opacidad en el menú de formas). */
   readonly Math = Math;
@@ -86,7 +109,8 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   protected currentSlideIndex = 0;
   protected selectedElement: Element | null = null;
-  protected newTextContent = '';
+  /** Id del elemento de texto que se está editando in-place en el lienzo. */
+  protected editingElementId: string | null = null;
   protected textInputSize = 24;
   /** Valores por defecto del ribbon cuando no hay un texto seleccionado. */
   protected ribbonTextColor = '#111827';
@@ -103,26 +127,48 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   // Catálogo de Formas
   protected shapeOptions = [
-    { type: 'rectangle', icon: '⬜', label: 'Rectángulo' },
-    { type: 'circle', icon: '⚪', label: 'Círculo' },
-    { type: 'triangle', icon: '▲', label: 'Triángulo' },
-    { type: 'diamond', icon: '💎', label: 'Diamante' },
-    { type: 'hexagon', icon: '⬢', label: 'Hexágono' },
-    { type: 'star', icon: '⭐', label: 'Estrella' },
-    { type: 'pentagon', icon: '⬠', label: 'Pentágono' },
-    { type: 'ellipse', icon: '⬭', label: 'Elipse' },
-    { type: 'parallelogram', icon: '▱', label: 'Paralelogramo' },
-    { type: 'pill', icon: '💊', label: 'Píldora' }
+    { type: 'rectangle', label: 'Rectángulo' },
+    { type: 'circle', label: 'Círculo' },
+    { type: 'triangle', label: 'Triángulo' },
+    { type: 'diamond', label: 'Diamante' },
+    { type: 'hexagon', label: 'Hexágono' },
+    { type: 'star', label: 'Estrella' },
+    { type: 'pentagon', label: 'Pentágono' },
+    { type: 'ellipse', label: 'Elipse' },
+    { type: 'parallelogram', label: 'Paralelogramo' },
+    { type: 'pill', label: 'Píldora' }
   ];
 
   // Catálogo de Flechas
   protected arrowOptions = [
-    { type: 'arrow-right', icon: '→', label: 'Derecha' },
-    { type: 'arrow-left', icon: '←', label: 'Izquierda' },
-    { type: 'arrow-up', icon: '↑', label: 'Arriba' },
-    { type: 'arrow-down', icon: '↓', label: 'Abajo' },
-    { type: 'arrow-both', icon: '↔', label: 'Doble' }
+    { type: 'arrow-right', label: 'Derecha' },
+    { type: 'arrow-left', label: 'Izquierda' },
+    { type: 'arrow-up', label: 'Arriba' },
+    { type: 'arrow-down', label: 'Abajo' },
+    { type: 'arrow-both', label: 'Doble' }
   ];
+
+  /** Path SVG (viewBox 24x24) por tipo de flecha; se usa en el menú y en el lienzo. */
+  private static readonly ARROW_PATHS: Record<string, string> = {
+    'arrow-right': 'M4.5 12h15m0 0-6-6m6 6-6 6',
+    'arrow-left': 'M19.5 12h-15m0 0 6-6m-6 6 6 6',
+    'arrow-up': 'M12 19.5V4.5m0 0-6 6m6-6 6 6',
+    'arrow-down': 'M12 4.5v15m0 0-6-6m6 6 6-6',
+    'arrow-both': 'M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4'
+  };
+
+  /** Vértices (fracción de ancho, fracción de alto) de cada forma poligonal, para dibujarla como <polygon> SVG. */
+  private static readonly SHAPE_POINT_FRACTIONS: Record<string, [number, number][]> = {
+    triangle: [[0.5, 0], [0, 1], [1, 1]],
+    diamond: [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]],
+    hexagon: [[0.25, 0], [0.75, 0], [1, 0.5], [0.75, 1], [0.25, 1], [0, 0.5]],
+    star: [
+      [0.5, 0], [0.61, 0.35], [0.98, 0.35], [0.68, 0.57], [0.79, 0.91],
+      [0.5, 0.70], [0.21, 0.91], [0.32, 0.57], [0.02, 0.35], [0.39, 0.35]
+    ],
+    pentagon: [[0.5, 0], [1, 0.38], [0.82, 1], [0.18, 1], [0, 0.38]],
+    parallelogram: [[0.25, 0], [1, 0], [0.75, 1], [0, 1]]
+  };
 
   ngOnInit(): void {
     this.refreshLastPresentationFromStorage();
@@ -195,7 +241,8 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   }
 
   startPresentation(): void {
-    this.selectedElement = null;
+    this.clearSelection();
+    this.editingElementId = null;
     this.showShapeMenu = false;
     this.activePanel = null;
     this.presentationMode = true;
@@ -276,23 +323,104 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   // --- LÓGICA DE ELEMENTOS ---
 
-  addTextElement(): void {
-    if (!this.newTextContent.trim()) return;
+  /** Inserta un recuadro de texto vacío directamente en el lienzo y lo deja listo para escribir. */
+  insertTextElement(): void {
     const element: Element = {
       id: `text-${Date.now()}`,
       type: 'text',
-      x: 100,
-      y: 100,
+      x: (this.stageWidth - 250) / 2,
+      y: (this.stageHeight - 60) / 2,
       width: 250,
       height: 60,
-      content: this.newTextContent,
+      content: '',
       fontSize: this.getTextFontSize(),
       color: this.getTextColor(),
       fontWeight: this.isTextBold() ? 'bold' : 'normal',
       textAlign: this.getTextAlign()
     };
     this.currentSlide.elements.push(element);
-    this.newTextContent = '';
+    this.selectElement(element);
+    this.editingElementId = element.id;
+    this.showShapeMenu = false;
+  }
+
+  /** Abre el selector de archivos nativo para elegir una imagen. */
+  triggerImageUpload(): void {
+    this.imageFileInput.nativeElement.click();
+  }
+
+  /** Lee el archivo elegido, calcula su tamaño de inserción y lo agrega al lienzo. */
+  onImageFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // permite volver a elegir el mismo archivo más adelante
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = new Image();
+      img.onload = () => {
+        this.insertImageElement(dataUrl, img.naturalWidth || 1, img.naturalHeight || 1);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  private insertImageElement(dataUrl: string, naturalWidth: number, naturalHeight: number): void {
+    const maxSize = CreatePresentationComponent.MAX_IMAGE_INSERT_SIZE;
+    const ratio = naturalWidth / naturalHeight;
+    let width = naturalWidth;
+    let height = naturalHeight;
+    if (width > maxSize || height > maxSize) {
+      if (ratio >= 1) {
+        width = maxSize;
+        height = Math.round(maxSize / ratio);
+      } else {
+        height = maxSize;
+        width = Math.round(maxSize * ratio);
+      }
+    }
+
+    const element: Element = {
+      id: `image-${Date.now()}`,
+      type: 'image',
+      x: (this.stageWidth - width) / 2,
+      y: (this.stageHeight - height) / 2,
+      width,
+      height,
+      content: dataUrl
+    };
+    this.currentSlide.elements.push(element);
+    this.selectElement(element);
+    this.showShapeMenu = false;
+  }
+
+  /** Reabre un recuadro de texto existente para editarlo con doble clic. */
+  startEditingText(element: Element): void {
+    if (element.type !== 'text') return;
+    this.selectElement(element);
+    this.editingElementId = element.id;
+  }
+
+  /** Cierra la edición in-place; si quedó vacío, elimina el recuadro. */
+  stopEditingText(element: Element): void {
+    this.editingElementId = null;
+    if (!element.content.trim()) {
+      this.deleteElement(element);
+    }
+  }
+
+  /** Enter confirma (Mayús+Enter = salto de línea), Escape cancela la edición. */
+  onTextEditKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
+    }
   }
 
   addShapeElement(shapeType: string): void {
@@ -316,6 +444,12 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     this.currentSlide.elements.forEach(el => el.selected = false);
     element.selected = true;
     this.selectedElement = element;
+  }
+
+  /** Limpia la selección (y el flag `.selected` de cada elemento, para que no quede el borde pegado). */
+  clearSelection(): void {
+    this.currentSlide.elements.forEach(el => el.selected = false);
+    this.selectedElement = null;
   }
 
   /** Tamaño de fuente del texto en edición (selección o valores por defecto del ribbon). */
@@ -380,10 +514,6 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     }
   }
 
-  showTextTypographyRibbon(): boolean {
-    return this.activePanel === 'texto' || this.selectedElement?.type === 'text';
-  }
-
   updateSlideBackground(color: string): void {
     this.currentSlide.backgroundColor = color;
   }
@@ -398,6 +528,40 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
       this.currentSlide.elements.splice(index, 1);
       this.selectedElement = null;
     }
+  }
+
+  // --- ORDEN DE APILADO (Z-INDEX) ---
+  // El orden visual (de atrás hacia adelante) lo da la posición del elemento
+  // dentro de `elements`: el último del arreglo se dibuja encima.
+
+  bringToFront(element: Element): void {
+    const elements = this.currentSlide.elements;
+    const index = elements.indexOf(element);
+    if (index === -1 || index === elements.length - 1) return;
+    elements.splice(index, 1);
+    elements.push(element);
+  }
+
+  sendToBack(element: Element): void {
+    const elements = this.currentSlide.elements;
+    const index = elements.indexOf(element);
+    if (index <= 0) return;
+    elements.splice(index, 1);
+    elements.unshift(element);
+  }
+
+  bringForward(element: Element): void {
+    const elements = this.currentSlide.elements;
+    const index = elements.indexOf(element);
+    if (index === -1 || index === elements.length - 1) return;
+    [elements[index], elements[index + 1]] = [elements[index + 1], elements[index]];
+  }
+
+  sendBackward(element: Element): void {
+    const elements = this.currentSlide.elements;
+    const index = elements.indexOf(element);
+    if (index <= 0) return;
+    [elements[index], elements[index - 1]] = [elements[index - 1], elements[index]];
   }
 
   // Al terminar el drag, calculamos la posición real basada en el evento
@@ -417,12 +581,19 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   // --- GESTIÓN DE ESTILOS DINÁMICOS ---
 
-  /** Estilos en modo presentación (sin marco de selección ni interacción de edición). */
+  /** Estilos en modo presentación (sin marco de selección ni caja de edición de texto). */
   getPresentationElementStyle(element: Element): Record<string, unknown> {
-    return this.getElementStyle({ ...element, selected: false });
+    return this.getElementStyle({ ...element, selected: false }, true);
   }
 
-  getElementStyle(element: Element): any {
+  /** Borde del elemento: selección > caja punteada de texto (solo editor) > sin borde. */
+  private getElementBorder(element: Element, isPresentation: boolean): string {
+    if (element.selected) return '2px solid #2563eb';
+    if (!isPresentation && element.type === 'text') return '1px dashed rgba(100, 116, 139, 0.6)';
+    return 'none';
+  }
+
+  getElementStyle(element: Element, isPresentation = false): any {
     // Definir color por defecto si no existe
     const elementColor = element.color || '#3b82f6'; // Azul por defecto
 
@@ -438,8 +609,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
       width: element.width + 'px',
       height: element.height + 'px',
       position: 'absolute',
-      zIndex: element.selected ? 10 : 1,
-      border: element.selected ? '2px solid #2563eb' : 'none',
+      border: this.getElementBorder(element, isPresentation),
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -450,38 +620,13 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     };
 
     if (element.type === 'shape') {
-      let clipPath = 'none';
-      const shape = element.content;
-
-      // Si es una flecha, no usar clip-path ni fondo
-      const isArrow = shape && shape.startsWith && shape.startsWith('arrow');
-      if (isArrow) {
-        return {
-          ...baseStyle,
-          fontSize: Math.max(element.width, element.height) * 0.7 + 'px',
-          color: elementColor,
-          backgroundColor: 'transparent',
-          borderRadius: '0',
-        };
-      }
-
-      // Definición de formas geométricas mediante CSS Clip-Path
-      switch (shape) {
-        case 'triangle': clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)'; break;
-        case 'diamond': clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'; break;
-        case 'hexagon': clipPath = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'; break;
-        case 'star': clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'; break;
-        case 'pentagon': clipPath = 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'; break;
-        case 'parallelogram': clipPath = 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)'; break;
-        case 'ellipse': baseStyle['borderRadius'] = '50%'; break;
-      }
-
+      // El relleno/contorno de la forma (o el trazo de la flecha) se dibuja con un <svg>
+      // interno (ver getShapeRenderData/getArrowPath); el wrapper queda transparente.
       return {
         ...baseStyle,
-        clipPath: clipPath,
-        borderRadius: shape === 'circle' ? '50%' : (shape === 'pill' ? '50px' : baseStyle['borderRadius'] || '0'),
-        backgroundColor: elementColor,
-        color: 'inherit'
+        color: elementColor,
+        backgroundColor: 'transparent',
+        borderRadius: '0'
       };
     }
 
@@ -500,25 +645,139 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     return baseStyle;
   }
 
-  getArrowIcon(shapeType: string): string {
-    const allOptions = [...this.shapeOptions, ...this.arrowOptions];
-    const found = allOptions.find(opt => opt.type === shapeType);
-    return found ? found.icon : '';
+  /** Clip-path / border-radius de cada forma geométrica; compartido entre el lienzo y la vista previa del menú. */
+  private getShapeVisualStyle(shapeType: string): { clipPath: string; borderRadius: string } {
+    switch (shapeType) {
+      case 'triangle':
+        return { clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', borderRadius: '0' };
+      case 'diamond':
+        return { clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', borderRadius: '0' };
+      case 'hexagon':
+        return { clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)', borderRadius: '0' };
+      case 'star':
+        return { clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', borderRadius: '0' };
+      case 'pentagon':
+        return { clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', borderRadius: '0' };
+      case 'parallelogram':
+        return { clipPath: 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)', borderRadius: '0' };
+      case 'ellipse':
+      case 'circle':
+        return { clipPath: 'none', borderRadius: '50%' };
+      case 'pill':
+        return { clipPath: 'none', borderRadius: '50px' };
+      default:
+        return { clipPath: 'none', borderRadius: '0' };
+    }
+  }
+
+  /** Miniatura de la forma en el menú "Formas", con el color de relleno que se usará al insertarla. */
+  getShapePreviewStyle(shapeType: string): Record<string, string> {
+    const { clipPath, borderRadius } = this.getShapeVisualStyle(shapeType);
+    return { clipPath, borderRadius, backgroundColor: this.nextShapeFillColor };
+  }
+
+  /** Path SVG del ícono de flecha, usado tanto en el menú como al dibujarla en el lienzo. */
+  getArrowPath(shapeType: string): string {
+    return CreatePresentationComponent.ARROW_PATHS[shapeType] || '';
+  }
+
+  /** stroke-dasharray según el estilo de línea elegido, escalado al grosor del trazo. */
+  getStrokeDashArray(style: Element['strokeStyle'] | undefined, strokeWidth: number): string {
+    if (style === 'dashed') return `${strokeWidth * 2.5} ${strokeWidth * 1.5}`;
+    if (style === 'dotted') return `${strokeWidth} ${strokeWidth * 1.4}`;
+    return 'none';
+  }
+
+  private getShapeSvgKind(shapeType: string): 'rect' | 'ellipse' | 'polygon' {
+    if (shapeType === 'circle' || shapeType === 'ellipse') return 'ellipse';
+    if (CreatePresentationComponent.SHAPE_POINT_FRACTIONS[shapeType]) return 'polygon';
+    return 'rect'; // rectangle, pill
+  }
+
+  /**
+   * Atributos SVG (rect/ellipse/polygon + relleno/contorno) para dibujar una forma ya
+   * colocada en el lienzo con contorno nítido, sin las limitaciones del clip-path CSS.
+   */
+  getShapeRenderData(element: Element): ShapeRenderData {
+    const shape = element.content;
+    const width = element.width;
+    const height = element.height;
+    const strokeWidth = Math.max(0, element.strokeWidth ?? 0);
+    const hasFill = element.hasFill !== false;
+    const fill = hasFill ? (element.color || '#3b82f6') : 'none';
+    const stroke = strokeWidth > 0 ? (element.strokeColor || '#1e293b') : 'none';
+    const dashArray = this.getStrokeDashArray(element.strokeStyle, strokeWidth);
+    const inset = strokeWidth / 2;
+    const kind = this.getShapeSvgKind(shape);
+
+    if (kind === 'ellipse') {
+      return {
+        kind, fill, stroke, strokeWidth, dashArray,
+        ellipseAttrs: {
+          cx: width / 2,
+          cy: height / 2,
+          rx: Math.max(0, width / 2 - inset),
+          ry: Math.max(0, height / 2 - inset)
+        }
+      };
+    }
+
+    if (kind === 'rect') {
+      const rx = shape === 'pill' ? Math.max(0, height / 2 - inset) : 0;
+      return {
+        kind, fill, stroke, strokeWidth, dashArray,
+        rectAttrs: {
+          x: inset,
+          y: inset,
+          width: Math.max(0, width - strokeWidth),
+          height: Math.max(0, height - strokeWidth),
+          rx
+        }
+      };
+    }
+
+    const fractions = CreatePresentationComponent.SHAPE_POINT_FRACTIONS[shape] || [];
+    const points = fractions
+      .map(([fx, fy]) => `${inset + fx * (width - strokeWidth)},${inset + fy * (height - strokeWidth)}`)
+      .join(' ');
+    return { kind, fill, stroke, strokeWidth, dashArray, points };
+  }
+
+  updateElementStrokeColor(color: string): void {
+    if (this.selectedElement) this.selectedElement.strokeColor = color;
+  }
+
+  updateElementStrokeWidth(width: number): void {
+    if (this.selectedElement) this.selectedElement.strokeWidth = Math.max(0, Math.min(40, Math.round(width)));
+  }
+
+  setElementStrokeStyle(style: 'solid' | 'dashed' | 'dotted'): void {
+    if (this.selectedElement) this.selectedElement.strokeStyle = style;
+  }
+
+  toggleElementFill(): void {
+    if (this.selectedElement) {
+      this.selectedElement.hasFill = this.selectedElement.hasFill === false;
+    }
   }
 
   // --- GESTIÓN DE DIAPOSITIVAS ---
 
   previousSlide(): void {
     if (this.currentSlideIndex > 0) {
+      if (this.selectedElement) this.selectedElement.selected = false;
       this.currentSlideIndex--;
       this.selectedElement = null;
+      this.editingElementId = null;
     }
   }
 
   nextSlide(): void {
     if (this.currentSlideIndex < this.slides.length - 1) {
+      if (this.selectedElement) this.selectedElement.selected = false;
       this.currentSlideIndex++;
       this.selectedElement = null;
+      this.editingElementId = null;
     }
   }
 
@@ -537,8 +796,10 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   }
 
   selectSlide(index: number): void {
+    if (this.selectedElement) this.selectedElement.selected = false;
     this.currentSlideIndex = index;
     this.selectedElement = null;
+    this.editingElementId = null;
   }
 
   // --- ACTUALIZACIÓN DE PROPIEDADES ---
