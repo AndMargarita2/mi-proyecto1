@@ -148,11 +148,22 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
 
     header {
       padding: 16px 24px;
-      background-color: #1f2937;
-      border-bottom: 2px solid #2563eb;
+      background-color: rgba(15, 23, 42, 0.92);
+      border-bottom: 1px solid var(--color-border, rgba(51, 65, 85, 0.85));
+      position: relative;
       display: flex;
       align-items: center;
       gap: 20px;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-accent, linear-gradient(90deg, #2563eb, #7c3aed));
     }
 
     header.main-topbar {
@@ -198,8 +209,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     .editor-toolbar-row {
       width: 100%;
       overflow: visible;
-      background: #1e293b;
-      border-bottom: 2px solid #2563eb;
+      background: var(--color-surface-alt, #1e293b);
+      border-bottom: 1px solid var(--color-border, rgba(51, 65, 85, 0.85));
     }
 
     .editor-toolbar-row:empty {
@@ -396,25 +407,12 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
 
     /*
      * :host antes de ::ng-deep es obligatorio aquí: sin él, la regla se vuelve
-     * global y pinta CUALQUIER <app-input> de la app (bug real que causó que el
-     * modal de login saliera con inputs gris oscuro en vez de su propio estilo).
+     * global y pinta CUALQUIER <app-input> de la app. El color ya lo resuelve
+     * el tema oscuro por defecto de app-input; aquí solo ajustamos tamaño.
      */
     :host ::ng-deep app-input input {
-      padding: 12px 16px !important;
-      font-size: 16px !important;
-      background-color: #374151 !important;
-      border-color: #4b5563 !important;
-      color: white !important;
-    }
-
-    :host ::ng-deep app-input input::placeholder {
-      color: #9ca3af !important;
-    }
-
-    :host ::ng-deep app-input input:focus {
-      background-color: #4b5563 !important;
-      border-color: #2563eb !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+      padding: 12px 16px;
+      font-size: 16px;
     }
   `]
 })

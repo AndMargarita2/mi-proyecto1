@@ -6,8 +6,8 @@
 
 .admin-page {
   min-height: 100vh;
-  background: #05090f;
-  color: #e9f4ff;
+  background: var(--color-bg, #040913);
+  color: var(--color-text, #e9f4ff);
   padding: 0.8rem 1.2rem 2rem;
 }
 

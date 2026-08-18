@@ -6,8 +6,8 @@
 
 .catalog-page {
   min-height: 100vh;
-  background: #05090f;
-  color: #e9f4ff;
+  background: var(--color-bg, #040913);
+  color: var(--color-text, #e9f4ff);
   padding: 0.8rem 1.2rem 1.2rem;
 }
 
@@ -64,8 +64,9 @@
 }
 
 .meta {
-  background: #d6d6d6;
-  color: #202020;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-subtle, rgba(148, 163, 184, 0.25));
+  color: var(--color-text-secondary, #cbd5e1);
   border-radius: 1rem;
   margin: 0.5rem;
   padding: 0.4rem 0.75rem;
@@ -74,6 +75,11 @@
 .meta p {
   margin: 0;
   line-height: 1.2;
+}
+
+.meta p:last-child {
+  color: var(--color-text, #ecf2ff);
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {

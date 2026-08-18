@@ -226,33 +226,6 @@ type AuthMode = 'login' | 'register';
       color: #b6c2d9;
     }
 
-    ::ng-deep .modal-card app-input input {
-      background-color: rgba(15, 23, 42, 0.75) !important;
-      border: 1px solid rgba(131, 157, 199, 0.3) !important;
-      color: #ecf2ff !important;
-    }
-
-    ::ng-deep .modal-card app-input input::placeholder {
-      color: #64748b !important;
-    }
-
-    ::ng-deep .modal-card app-input input:focus {
-      border-color: #3b82f6 !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
-    }
-
-    ::ng-deep .modal-card app-input input.error {
-      border-color: #f87171 !important;
-    }
-
-    ::ng-deep .modal-card app-input .helper-text {
-      color: #94a3b8;
-    }
-
-    ::ng-deep .modal-card app-input .helper-text.error {
-      color: #f87171;
-    }
-
     .mode-toggle {
       margin-top: 18px;
       width: 100%;

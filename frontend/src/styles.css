@@ -2,9 +2,41 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Superficies (mismo degradado navy/morado que la home en toda la app) */
+  --color-bg: #040913;
+  --color-surface: #0f172a;
+  --color-surface-alt: #1e293b;
+  --color-surface-raised: rgba(15, 23, 42, 0.75);
+
+  /* Bordes */
+  --color-border: rgba(51, 65, 85, 0.85);
+  --color-border-subtle: rgba(148, 163, 184, 0.35);
+
+  /* Texto */
+  --color-text: #ecf2ff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
+  /* Acento de marca (barra superior de menús, hover de enlaces, focus) */
+  --color-accent-from: #2563eb;
+  --color-accent-to: #7c3aed;
+  --gradient-accent: linear-gradient(90deg, var(--color-accent-from), var(--color-accent-to));
+  --gradient-pill: linear-gradient(90deg, #c026d3, #7c3aed);
+  --color-link: #93c5fd;
+  --color-link-hover: #60a5fa;
+
+  /* Estado */
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-bg: rgba(127, 29, 29, 0.18);
+  --color-danger-border: rgba(248, 113, 113, 0.35);
+  --color-danger-text: #fca5a5;
+}
+
 html,
 body {
   margin: 0;
   min-height: 100%;
-  background-color: #040913;
+  background-color: var(--color-bg);
 }

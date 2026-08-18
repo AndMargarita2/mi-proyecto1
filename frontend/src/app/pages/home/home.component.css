@@ -11,7 +11,7 @@
   background:
     radial-gradient(circle at 20% 20%, rgba(27, 104, 170, 0.35), transparent 32%),
     radial-gradient(circle at 80% 10%, rgba(110, 15, 130, 0.28), transparent 40%),
-    #040913;
+    var(--color-bg, #040913);
 }
 
 .hero {
@@ -199,7 +199,7 @@
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.3;
-  color: #111827;
+  color: var(--color-text, #ecf2ff);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

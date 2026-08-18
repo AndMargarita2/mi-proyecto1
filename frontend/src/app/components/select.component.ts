@@ -44,9 +44,10 @@ export interface SelectOption {
     .select-trigger {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--color-border-subtle, rgba(148, 163, 184, 0.35));
       border-radius: 8px;
-      background-color: white;
+      background-color: var(--color-surface, #0f172a);
+      color: var(--color-text, #ecf2ff);
       font-size: 14px;
       font-family: inherit;
       font-weight: 600;
@@ -58,19 +59,19 @@ export interface SelectOption {
     }
 
     .select-trigger:hover {
-      border-color: #9ca3af;
+      border-color: rgba(148, 163, 184, 0.55);
     }
 
     .select-trigger:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      border-color: var(--color-accent-from, #2563eb);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
     }
 
     .arrow {
       font-size: 10px;
       transition: transform 0.2s ease;
-      color: #6b7280;
+      color: var(--color-text-muted, #94a3b8);
     }
 
     .arrow.open {
@@ -82,11 +83,11 @@ export interface SelectOption {
       top: 100%;
       left: 0;
       right: 0;
-      background-color: white;
-      border: 1px solid #d1d5db;
+      background-color: var(--color-surface, #0f172a);
+      border: 1px solid var(--color-border-subtle, rgba(148, 163, 184, 0.35));
       border-top: none;
       border-radius: 0 0 8px 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
       z-index: 10;
       overflow: hidden;
       margin-top: -1px;
@@ -97,6 +98,7 @@ export interface SelectOption {
       padding: 10px 12px;
       border: none;
       background-color: transparent;
+      color: var(--color-text, #ecf2ff);
       text-align: left;
       font-size: 14px;
       font-family: inherit;
@@ -105,12 +107,12 @@ export interface SelectOption {
     }
 
     .dropdown-item:hover {
-      background-color: #f3f4f6;
+      background-color: rgba(255, 255, 255, 0.08);
     }
 
     .dropdown-item.selected {
-      background-color: #eff6ff;
-      color: #2563eb;
+      background-color: rgba(37, 99, 235, 0.18);
+      color: var(--color-link, #93c5fd);
       font-weight: 600;
     }
   `]

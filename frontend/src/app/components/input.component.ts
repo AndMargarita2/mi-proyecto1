@@ -33,41 +33,46 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
     input {
       padding: 10px 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--color-border-subtle, rgba(148, 163, 184, 0.35));
       border-radius: 8px;
       font-size: 14px;
       font-family: inherit;
       transition: all 0.2s ease;
-      background-color: white;
+      background-color: var(--color-surface-raised, rgba(15, 23, 42, 0.75));
+      color: var(--color-text, #ecf2ff);
+    }
+
+    input::placeholder {
+      color: var(--color-text-muted, #64748b);
     }
 
     input:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      border-color: var(--color-accent-from, #2563eb);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
     }
 
     input:disabled {
-      background-color: #f3f4f6;
-      color: #9ca3af;
+      background-color: rgba(255, 255, 255, 0.04);
+      color: var(--color-text-muted, #64748b);
       cursor: not-allowed;
     }
 
     input.error {
-      border-color: #ef4444;
+      border-color: var(--color-danger, #ef4444);
     }
 
     input.error:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
     }
 
     .helper-text {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--color-text-muted, #94a3b8);
     }
 
     .helper-text.error {
-      color: #ef4444;
+      color: var(--color-danger, #f87171);
     }
   `],
   providers: [

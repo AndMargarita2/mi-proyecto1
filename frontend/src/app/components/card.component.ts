@@ -29,26 +29,27 @@ export type CardVariant = 'default' | 'elevated' | 'outlined';
     }
 
     .default {
-      background-color: white;
-      border: 1px solid #e5e7eb;
+      background-color: var(--color-surface, #0f172a);
+      border: 1px solid var(--color-border, rgba(51, 65, 85, 0.85));
     }
 
     .default:hover {
-      border-color: #d1d5db;
+      border-color: var(--color-border-subtle, rgba(148, 163, 184, 0.35));
     }
 
     .elevated {
-      background-color: white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      background-color: var(--color-surface, #0f172a);
+      border: 1px solid var(--color-border, rgba(51, 65, 85, 0.85));
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
     }
 
     .elevated:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
     .outlined {
       background-color: transparent;
-      border: 2px solid #2563eb;
+      border: 2px solid var(--color-accent-from, #2563eb);
     }
 
     .clickable {
