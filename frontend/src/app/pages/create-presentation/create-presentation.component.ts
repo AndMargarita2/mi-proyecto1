@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ViewChild,
   ElementRef,
@@ -9,45 +10,18 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DragDropModule, CdkDragEnd } from '@angular/cdk/drag-drop';
 import { HeaderComponent } from '../../components/header.component';
-
-interface Slide {
-  id: number;
-  elements: Element[];
-  /** Color de fondo de la diapositiva (lienzo). */
-  backgroundColor?: string;
-}
-
-interface LastPresentationMeta {
-  title: string;
-  path: string;
-  at: string;
-}
-
-interface Element {
-  id: string;
-  type: 'text' | 'shape' | 'image';
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  content: string;
-  color?: string;
-  fontSize?: number;
-  fontWeight?: 'normal' | 'bold';
-  textAlign?: 'left' | 'center' | 'right';
-  opacity?: number;
-  selected?: boolean;
-  /** Color del contorno de la forma (0 = sin contorno vía strokeWidth). */
-  strokeColor?: string;
-  /** Grosor del contorno en px; 0 significa sin contorno. */
-  strokeWidth?: number;
-  strokeStyle?: 'solid' | 'dashed' | 'dotted';
-  /** Si es false, la forma se dibuja sin relleno (solo contorno). Default: true. */
-  hasFill?: boolean;
-}
+import { ButtonComponent } from '../../components/button.component';
+import { SelectComponent, SelectOption } from '../../components/select.component';
+import { AuthService } from '../../services/auth.service';
+import { PresentationCategory, PresentationsService } from '../../services/presentations.service';
+import {
+  LastPresentationMeta,
+  Slide,
+  SlideElement as Element
+} from '../../models/slide.model';
 
 /** Descripción de cómo dibujar el SVG de una forma ya colocada en el lienzo. */
 interface ShapeRenderData {
@@ -69,7 +43,9 @@ interface ShapeRenderData {
     FormsModule,
     RouterLink,
     DragDropModule,
-    HeaderComponent
+    HeaderComponent,
+    ButtonComponent,
+    SelectComponent
   ],
   templateUrl: './create-presentation.component.html',
   styleUrl: './create-presentation.component.css'
@@ -78,6 +54,10 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   private static readonly LS_LAST_PRESENTATION = 'mp_editor_ultima_presentacion';
 
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly presentationsSvc = inject(PresentationsService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  protected readonly auth = inject(AuthService);
 
   @ViewChild('mainCanvas') mainCanvas!: ElementRef;
   @ViewChild('presentationRoot') presentationRoot?: ElementRef<HTMLElement>;
@@ -94,6 +74,12 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   protected readonly stageHeight = 675;
 
   protected presentationTitle = 'Presentacion2';
+  protected presentationCategory: PresentationCategory = 'tech';
+  protected readonly categoryOptions: SelectOption[] = [
+    { value: 'tech', label: 'Tecnologia' },
+    { value: 'business', label: 'Negocios' },
+    { value: 'education', label: 'Educacion' }
+  ];
   /** Texto mostrado para la última visita al editor (desde localStorage). */
   protected lastPresentationMeta: LastPresentationMeta | null = null;
   protected menuSearchQuery = '';
@@ -108,6 +94,17 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   ];
 
   protected currentSlideIndex = 0;
+
+  /** Id de la presentación cuando se edita una existente (ruta /crear-presentacion/:id). */
+  protected presentationId: number | null = null;
+  /** true para presentaciones nuevas o cuando el usuario actual es el dueño. */
+  protected isOwner = true;
+  /** true cuando alguien sin sesión abre una presentación ajena: vista sin controles de edición. */
+  protected readOnly = false;
+  protected loadingPresentation = false;
+  protected saving = false;
+  protected saveError = '';
+
   protected selectedElement: Element | null = null;
   /** Id del elemento de texto que se está editando in-place en el lienzo. */
   protected editingElementId: string | null = null;
@@ -172,15 +169,95 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.refreshLastPresentationFromStorage();
-    this.persistLastPresentationView();
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (!idParam) {
+      this.persistLastPresentationView();
+      return;
+    }
+
+    this.presentationId = Number(idParam);
+    this.loadingPresentation = true;
+    void this.loadPresentationById(this.presentationId);
+  }
+
+  /**
+   * Espera a que AuthService termine de restaurar la sesión (token en localStorage)
+   * antes de comparar el dueño: si no, una recarga directa a esta URL trataría a un
+   * usuario ya logueado como anónimo.
+   */
+  private async loadPresentationById(id: number): Promise<void> {
+    await this.auth.waitUntilReady();
+
+    this.presentationsSvc.get(id).subscribe({
+      next: presentation => {
+        this.presentationTitle = presentation.title;
+        this.presentationCategory = presentation.category;
+        this.slides = presentation.slides.length ? presentation.slides : this.slides;
+        this.currentSlideIndex = 0;
+        this.loadingPresentation = false;
+
+        const me = this.auth.currentUser;
+        this.isOwner = !!me && me.id === presentation.ownerId;
+        if (!this.isOwner) {
+          // No es el dueño (logueado o anónimo): puede ver la presentación,
+          // pero no editarla.
+          this.readOnly = true;
+          setTimeout(() => this.updateViewerScale());
+        }
+        this.persistLastPresentationView();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loadingPresentation = false;
+        this.router.navigate(['/catalogo']);
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.persistLastPresentationView();
   }
 
+  /** Crea o actualiza la presentación en el backend según haya o no un id de ruta. */
+  save(): void {
+    if (this.readOnly || this.saving) return;
+    this.saving = true;
+    this.saveError = '';
+
+    const title = (this.presentationTitle || 'Sin título').trim() || 'Sin título';
+    const request$ = this.presentationId
+      ? this.presentationsSvc.update(this.presentationId, {
+          title,
+          category: this.presentationCategory,
+          slides: this.slides
+        })
+      : this.presentationsSvc.create(title, this.slides, this.presentationCategory);
+
+    request$.subscribe({
+      next: presentation => {
+        this.saving = false;
+        if (!this.presentationId) {
+          this.presentationId = presentation.id;
+          this.router.navigate(['/crear-presentacion', presentation.id], { replaceUrl: true });
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.saving = false;
+        this.saveError = 'No se pudo guardar la presentación.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   get currentSlide(): Slide {
     return this.slides[this.currentSlideIndex];
+  }
+
+  onCategoryChange(value: string | number): void {
+    this.presentationCategory = value as PresentationCategory;
   }
 
   private refreshLastPresentationFromStorage(): void {
@@ -240,6 +317,32 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     this.presentationScale = Math.max(0.15, Math.min(sx, sy));
   }
 
+  /**
+   * Escala del lienzo en modo "Ver" (solo lectura): las coordenadas de los elementos
+   * son en px absolutos sobre un lienzo lógico de 1200x675, así que en pantallas
+   * angostas hay que reducir el lienzo completo (con transform) en vez de dejar que
+   * el CSS lo achique solo, o el contenido se saldría del recuadro.
+   */
+  protected viewerScale = 1;
+
+  private updateViewerScale(): void {
+    if (!this.readOnly) return;
+    const container = this.mainCanvas?.nativeElement?.parentElement as HTMLElement | undefined;
+    if (!container) return;
+    const available = container.clientWidth - 32; // padding del contenedor
+    this.viewerScale = Math.min(1, Math.max(0.2, available / this.stageWidth));
+    this.cdr.markForCheck();
+  }
+
+  /** Estilo del lienzo cuando se está viendo (no editando) una presentación. */
+  getViewerCanvasStyle(): Record<string, string> {
+    return {
+      width: this.stageWidth + 'px',
+      transform: `scale(${this.viewerScale})`,
+      transformOrigin: 'center center'
+    };
+  }
+
   startPresentation(): void {
     this.clearSelection();
     this.editingElementId = null;
@@ -276,6 +379,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   @HostListener('window:resize')
   onWindowResize(): void {
     this.updatePresentationScale();
+    this.updateViewerScale();
   }
 
   @HostListener('document:fullscreenchange')
@@ -290,6 +394,12 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
     if (this.editorMenuOpen) {
       this.refreshLastPresentationFromStorage();
     }
+  }
+
+  onMenuLogout(): void {
+    this.auth.logout();
+    this.editorMenuOpen = false;
+    this.router.navigateByUrl('/');
   }
 
   onPresentationTitleChange(value: string): void {
@@ -325,6 +435,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   /** Inserta un recuadro de texto vacío directamente en el lienzo y lo deja listo para escribir. */
   insertTextElement(): void {
+    if (this.readOnly) return;
     const element: Element = {
       id: `text-${Date.now()}`,
       type: 'text',
@@ -346,6 +457,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   /** Abre el selector de archivos nativo para elegir una imagen. */
   triggerImageUpload(): void {
+    if (this.readOnly) return;
     this.imageFileInput.nativeElement.click();
   }
 
@@ -362,6 +474,8 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
       const img = new Image();
       img.onload = () => {
         this.insertImageElement(dataUrl, img.naturalWidth || 1, img.naturalHeight || 1);
+        // App zoneless: FileReader/Image son APIs nativas fuera del tracking de Angular.
+        this.cdr.markForCheck();
       };
       img.src = dataUrl;
     };
@@ -399,7 +513,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   /** Reabre un recuadro de texto existente para editarlo con doble clic. */
   startEditingText(element: Element): void {
-    if (element.type !== 'text') return;
+    if (this.readOnly || element.type !== 'text') return;
     this.selectElement(element);
     this.editingElementId = element.id;
   }
@@ -424,6 +538,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   }
 
   addShapeElement(shapeType: string): void {
+    if (this.readOnly) return;
     const isArrow = shapeType.startsWith('arrow');
     const element: Element = {
       id: `shape-${Date.now()}`,
@@ -523,6 +638,7 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   }
 
   deleteElement(element: Element): void {
+    if (this.readOnly) return;
     const index = this.currentSlide.elements.indexOf(element);
     if (index > -1) {
       this.currentSlide.elements.splice(index, 1);
@@ -566,6 +682,10 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
 
   // Al terminar el drag, calculamos la posición real basada en el evento
   onDragEnd(event: CdkDragEnd, element: Element): void {
+    if (this.readOnly) {
+      event.source.reset();
+      return;
+    }
     // Obtener el desplazamiento delta del movimiento de arrastre
     const delta = event.distance;
     
@@ -589,7 +709,9 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   /** Borde del elemento: selección > caja punteada de texto (solo editor) > sin borde. */
   private getElementBorder(element: Element, isPresentation: boolean): string {
     if (element.selected) return '2px solid #2563eb';
-    if (!isPresentation && element.type === 'text') return '1px dashed rgba(100, 116, 139, 0.6)';
+    if (!isPresentation && !this.readOnly && element.type === 'text') {
+      return '1px dashed rgba(100, 116, 139, 0.6)';
+    }
     return 'none';
   }
 
@@ -782,11 +904,13 @@ export class CreatePresentationComponent implements OnInit, OnDestroy {
   }
 
   addSlide(): void {
+    if (this.readOnly) return;
     const newId = this.slides.length > 0 ? Math.max(...this.slides.map(s => s.id)) + 1 : 1;
     this.slides.push({ id: newId, elements: [] });
   }
 
   deleteSlide(index: number): void {
+    if (this.readOnly) return;
     if (this.slides.length > 1) {
       this.slides.splice(index, 1);
       if (this.currentSlideIndex >= this.slides.length) {

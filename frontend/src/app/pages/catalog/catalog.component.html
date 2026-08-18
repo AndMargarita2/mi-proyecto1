@@ -1,20 +1,70 @@
 <main class="catalog-page">
-  <app-header 
+  <app-header
     type="catalog"
-    logoText="D"
     title="Catalogo"
     searchPlaceholder="Busca entre los proyectos..."
+    [initialQuery]="currentQuery"
+    [userDisplayName]="auth.currentUser?.displayName ?? null"
+    [isAdmin]="auth.currentUser?.isAdmin ?? false"
+    (onUserClick)="onUserClick()"
+    (onLogoutClick)="onLogout()"
+    (searchSubmit)="onSearchSubmit($event)"
+    (onMenuClick)="menuOpen = !menuOpen"
   ></app-header>
+
+  @if (menuOpen) {
+    <div class="side-menu-backdrop" (click)="menuOpen = false" aria-hidden="true"></div>
+  }
+  <aside
+    class="side-menu"
+    [class.is-open]="menuOpen"
+    role="dialog"
+    [attr.aria-modal]="menuOpen ? 'true' : null"
+    [attr.aria-hidden]="!menuOpen"
+    aria-label="Menú principal"
+  >
+    <div class="side-menu-header">
+      <span class="side-menu-title">Menú</span>
+      <button type="button" class="side-menu-close" aria-label="Cerrar menú" (click)="menuOpen = false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav class="side-menu-nav" aria-label="Navegación principal">
+      <a routerLink="/" class="side-menu-link" (click)="menuOpen = false">Inicio</a>
+      <a routerLink="/crear-presentacion" class="side-menu-link" (click)="menuOpen = false">Crear presentación</a>
+
+      @if (auth.isLoggedIn) {
+        <div class="side-menu-section">
+          <span class="side-menu-section-title">Sesión</span>
+          <span class="side-menu-muted">{{ auth.currentUser?.displayName }}</span>
+        </div>
+        @if (auth.currentUser?.isAdmin) {
+          <a routerLink="/admin" class="side-menu-link" (click)="menuOpen = false">Panel del maestro</a>
+        }
+        <button
+          type="button"
+          class="side-menu-link side-menu-link-button side-menu-link-danger"
+          (click)="onMenuLogout()"
+        >Salir</button>
+      } @else {
+        <button
+          type="button"
+          class="side-menu-link side-menu-link-button"
+          (click)="menuOpen = false; onUserClick()"
+        >Iniciar sesión</button>
+      }
+    </nav>
+  </aside>
 
   <section class="toolbar">
     <div class="filters">
-      <app-select 
+      <app-select
         [options]="categoryOptions"
         [selectedValue]="selectedCategory"
         placeholder="Filtro de categoria"
         (valueChange)="onCategoryChange($event)"
       ></app-select>
-      <app-select 
+      <app-select
         [options]="sortOptions"
         [selectedValue]="selectedSort"
         placeholder="Ordenar por"
@@ -22,29 +72,41 @@
       ></app-select>
     </div>
 
-    <div class="actions">
-      <app-button variant="primary" size="sm" routerLink="/crear-presentacion">
+    <div class="actions actions-create">
+      <app-button variant="pill" size="sm" routerLink="/crear-presentacion">
         Abrir editor
       </app-button>
-      <app-button variant="secondary" size="sm">Ver</app-button>
-      <app-button variant="secondary" size="sm">Editar</app-button>
-      <app-button variant="danger" size="sm">Borrar</app-button>
     </div>
   </section>
 
   <section class="grid">
-    @if (filteredItems.length === 0) {
+    @if (loading) {
+      <p class="catalog-empty">Cargando presentaciones...</p>
+    } @else if (filteredItems.length === 0) {
       <p class="catalog-empty">No hay presentaciones que coincidan con la búsqueda.</p>
     } @else {
-      @for (item of filteredItems; track item.title) {
+      @for (item of filteredItems; track item.id) {
         <app-card variant="elevated" [clickable]="true">
-          <div class="preview"></div>
+          <div class="preview" (click)="onVer(item)"></div>
           <div class="meta">
-            <p>Autor: {{ item.author }}</p>
+            <p>Autor: {{ item.ownerName }}</p>
             <p>Titulo: {{ item.title }}</p>
+          </div>
+          <div class="card-actions">
+            <app-button variant="secondary" size="sm" (onClick)="onVer(item)">Ver</app-button>
+            @if (isOwner(item)) {
+              <app-button variant="secondary" size="sm" (onClick)="onEditar(item)">Editar</app-button>
+              <app-button variant="danger" size="sm" (onClick)="onBorrar(item)">Borrar</app-button>
+            }
           </div>
         </app-card>
       }
     }
   </section>
+
+  <app-login-modal
+    [open]="loginModalOpen"
+    (closed)="loginModalOpen = false"
+    (authenticated)="loginModalOpen = false"
+  ></app-login-modal>
 </main>

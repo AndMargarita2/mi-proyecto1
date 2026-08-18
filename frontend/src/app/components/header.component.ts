@@ -28,18 +28,26 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
           <span></span>
           <span></span>
         </button>
-        <div class="logo">{{ logoText }}</div>
-        <app-input 
+        <app-input
           type="search"
           [placeholder]="searchPlaceholder"
           aria-label="Buscar proyecto"
+          [(ngModel)]="searchDraft"
+          (keyup.enter)="handleSearchSubmit()"
         ></app-input>
-        <app-button 
-          variant="secondary"
-          (onClick)="onLoginClick.emit()"
-        >
-          Iniciar sesion
-        </app-button>
+        <ng-container *ngIf="userDisplayName; else mainLoginBtn">
+          <a *ngIf="isAdmin" routerLink="/admin" class="admin-link">Panel del maestro</a>
+          <span class="user-chip" [title]="userDisplayName">{{ userDisplayName }}</span>
+          <app-button variant="secondary" (onClick)="onLogoutClick.emit()">Salir</app-button>
+        </ng-container>
+        <ng-template #mainLoginBtn>
+          <app-button
+            variant="secondary"
+            (onClick)="onLoginClick.emit()"
+          >
+            Iniciar sesion
+          </app-button>
+        </ng-template>
       </ng-container>
 
       <!-- Catalog Header -->
@@ -50,21 +58,29 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
             <span></span>
             <span></span>
           </button>
-          <div class="logo">{{ logoText }}</div>
           <h1>{{ title }}</h1>
         </div>
-        <app-input 
+        <app-input
           type="search"
           [placeholder]="searchPlaceholder"
           aria-label="Buscar en catalogo"
+          [(ngModel)]="searchDraft"
+          (keyup.enter)="handleSearchSubmit()"
         ></app-input>
-        <app-button 
-          variant="secondary"
-          size="sm"
-          (onClick)="onUserClick.emit()"
-        >
-          usuario
-        </app-button>
+        <ng-container *ngIf="userDisplayName; else catalogLoginBtn">
+          <a *ngIf="isAdmin" routerLink="/admin" class="admin-link">Panel del maestro</a>
+          <span class="user-chip" [title]="userDisplayName">{{ userDisplayName }}</span>
+          <app-button variant="secondary" size="sm" (onClick)="onLogoutClick.emit()">Salir</app-button>
+        </ng-container>
+        <ng-template #catalogLoginBtn>
+          <app-button
+            variant="secondary"
+            size="sm"
+            (onClick)="onUserClick.emit()"
+          >
+            usuario
+          </app-button>
+        </ng-template>
       </ng-container>
 
       <!-- Editor: barra principal + cinta (contenido proyectado) -->
@@ -72,17 +88,21 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
         <div class="editor-shell">
           <div class="editor-row-primary">
             <div class="editor-header-start">
-              <input
-                type="text"
-                class="editor-title-input"
-                name="editorPresentationTitle"
-                [(ngModel)]="titleDraft"
-                (ngModelChange)="onTitleDraftChange($event)"
-                [placeholder]="titlePlaceholder"
-                spellcheck="false"
-                maxlength="120"
-                aria-label="Nombre de la presentación"
-              />
+              @if (readOnly) {
+                <h1 class="editor-title-readonly">{{ title || titlePlaceholder }}</h1>
+              } @else {
+                <input
+                  type="text"
+                  class="editor-title-input"
+                  name="editorPresentationTitle"
+                  [(ngModel)]="titleDraft"
+                  (ngModelChange)="onTitleDraftChange($event)"
+                  [placeholder]="titlePlaceholder"
+                  spellcheck="false"
+                  maxlength="120"
+                  aria-label="Nombre de la presentación"
+                />
+              }
             </div>
             <div class="editor-header-end">
               <button
@@ -128,8 +148,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
 
     header {
       padding: 16px 24px;
-      background-color: #1f2937;
-      border-bottom: 2px solid #2563eb;
+      background-color: #0e2622;
+      border-bottom: 2px solid #22d3ee;
       display: flex;
       align-items: center;
       gap: 20px;
@@ -178,8 +198,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     .editor-toolbar-row {
       width: 100%;
       overflow: visible;
-      background: #1e293b;
-      border-bottom: 2px solid #2563eb;
+      background: #12211f;
+      border-bottom: 2px solid #22d3ee;
     }
 
     .editor-toolbar-row:empty {
@@ -217,7 +237,7 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .menu-btn:hover span {
-      background-color: #2563eb;
+      background-color: #22d3ee;
     }
 
     .menu-btn span {
@@ -250,7 +270,7 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .mini-btn:hover span {
-      background-color: #60a5fa;
+      background-color: #22d3ee;
     }
 
     .mini-btn span {
@@ -293,22 +313,50 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
+    .editor-title-readonly {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: #e0f2fe;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 8px 4px;
+    }
+
     .editor-title-input::placeholder {
       color: #64748b;
     }
 
     .editor-title-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+      border-color: #22d3ee;
+      box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.25);
     }
 
-    .logo {
-      font-size: 28px;
-      font-weight: 800;
-      color: #2563eb;
-      min-width: 45px;
-      text-align: center;
-      letter-spacing: -2px;
+    .user-chip {
+      color: #e5e7eb;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .admin-link {
+      color: #67e8f9;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      border: 1px solid rgba(103, 232, 249, 0.4);
+      border-radius: 999px;
+      padding: 6px 12px;
+    }
+
+    .admin-link:hover {
+      background: rgba(103, 232, 249, 0.1);
     }
 
     .left-group {
@@ -331,7 +379,27 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
       min-width: 200px;
     }
 
-    ::ng-deep app-input input {
+    @media (max-width: 640px) {
+      header.main-topbar,
+      header.catalog-topbar {
+        flex-wrap: wrap;
+        row-gap: 10px;
+      }
+
+      app-input {
+        order: 3;
+        flex-basis: 100%;
+        min-width: 0;
+        max-width: none;
+      }
+    }
+
+    /*
+     * :host antes de ::ng-deep es obligatorio aquí: sin él, la regla se vuelve
+     * global y pinta CUALQUIER <app-input> de la app (bug real que causó que el
+     * modal de login saliera con inputs gris oscuro en vez de su propio estilo).
+     */
+    :host ::ng-deep app-input input {
       padding: 12px 16px !important;
       font-size: 16px !important;
       background-color: #374151 !important;
@@ -339,14 +407,14 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
       color: white !important;
     }
 
-    ::ng-deep app-input input::placeholder {
+    :host ::ng-deep app-input input::placeholder {
       color: #9ca3af !important;
     }
 
-    ::ng-deep app-input input:focus {
+    :host ::ng-deep app-input input:focus {
       background-color: #4b5563 !important;
-      border-color: #2563eb !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2) !important;
     }
   `]
 })
@@ -359,17 +427,33 @@ export class HeaderComponent implements OnInit, OnChanges {
   @Input() homeLink = '/';
   /** Estado del panel lateral del editor (para aria-expanded del botón menú). */
   @Input() menuExpanded = false;
+  /** Nombre a mostrar cuando hay sesión iniciada (main/catalog); null = mostrar botón de login. */
+  @Input() userDisplayName: string | null = null;
+  @Input() isAdmin = false;
+  /** Precarga el buscador (ej. con el ?q= actual del catálogo). */
+  @Input() initialQuery = '';
+  /** type="editor": true = título como texto plano (vista Ver Presentación). */
+  @Input() readOnly = false;
   @Output() onMenuClick = new EventEmitter<void>();
   @Output() onLoginClick = new EventEmitter<void>();
   @Output() onUserClick = new EventEmitter<void>();
+  @Output() onLogoutClick = new EventEmitter<void>();
   @Output() onPresentClick = new EventEmitter<void>();
   @Output() titleChange = new EventEmitter<string>();
+  /** Se dispara al presionar Enter en el buscador (main/catalog). */
+  @Output() searchSubmit = new EventEmitter<string>();
 
   /** Borrador local del título (evita saltos del cursor con solo [value]). */
   titleDraft = '';
+  searchDraft = '';
 
   ngOnInit(): void {
     this.titleDraft = this.title;
+    this.searchDraft = this.initialQuery;
+  }
+
+  handleSearchSubmit(): void {
+    this.searchSubmit.emit(this.searchDraft.trim());
   }
 
   ngOnChanges(changes: SimpleChanges): void {

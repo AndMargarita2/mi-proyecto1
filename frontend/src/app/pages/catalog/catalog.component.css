@@ -43,17 +43,6 @@
   background: #eaf5ff;
 }
 
-.logo {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 999px;
-  border: 2px solid rgba(138, 181, 255, 0.7);
-  color: #acd6ff;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-}
-
 .left-group h1 {
   margin: 0;
   font-size: 1.35rem;
@@ -80,7 +69,10 @@
 
 .toolbar {
   margin-top: 0.8rem;
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.8rem;
 }
 
@@ -99,21 +91,16 @@
 }
 
 .actions {
-  border-radius: 999px;
-  background: linear-gradient(90deg, #00182f, #0a2e57, #00152b);
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  justify-content: flex-end;
   gap: 1rem;
-  padding: 0.5rem 1rem;
 }
 
-.actions button {
-  height: 1.9rem;
-  border-radius: 999px;
-  border: none;
-  background: rgba(202, 219, 226, 0.9);
-  color: #15202a;
-  font-weight: 600;
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.5rem 0.65rem;
+  flex-wrap: wrap;
 }
 
 .grid {
@@ -144,8 +131,8 @@
 .preview {
   height: 8.2rem;
   background:
-    radial-gradient(circle at 20% 10%, rgba(95, 171, 255, 0.3), transparent 40%),
-    linear-gradient(130deg, rgba(6, 39, 64, 0.95), rgba(8, 11, 19, 0.95));
+    radial-gradient(circle at 20% 10%, rgba(95, 240, 231, 0.3), transparent 40%),
+    linear-gradient(130deg, rgba(6, 54, 48, 0.95), rgba(8, 15, 14, 0.95));
 }
 
 .meta {
@@ -168,6 +155,141 @@
   }
 
   .actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
   }
+}
+
+.side-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1210;
+  width: min(300px, 92vw);
+  height: 100vh;
+  background: #0f172a;
+  border-right: 1px solid rgba(51, 65, 85, 0.9);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+
+.side-menu.is-open {
+  transform: translateX(0);
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.side-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.85);
+}
+
+.side-menu-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.side-menu-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.side-menu-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.side-menu-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.side-menu-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-decoration: none;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.side-menu-link:hover {
+  background: rgba(34, 211, 238, 0.2);
+  border-color: rgba(103, 232, 249, 0.45);
+}
+
+.side-menu-link-button {
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.side-menu-link-danger {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.25);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.side-menu-link-danger:hover {
+  background: rgba(220, 38, 38, 0.35);
+  border-color: rgba(252, 165, 165, 0.55);
+}
+
+.side-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0 4px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.65);
+  margin-bottom: 4px;
+}
+
+.side-menu-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 4px;
+}
+
+.side-menu-muted {
+  font-size: 11px;
+  color: #64748b;
+  padding: 0 4px 4px;
 }

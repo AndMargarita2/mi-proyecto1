@@ -1,16 +1,36 @@
 <main class="editor">
   <app-header
     type="editor"
-    logoText="D"
     [title]="presentationTitle"
     (titleChange)="onPresentationTitleChange($event)"
     titlePlaceholder="Nombre de la presentación"
     homeLink="/"
     [menuExpanded]="editorMenuOpen"
+    [readOnly]="readOnly"
     (onMenuClick)="toggleEditorMenu()"
     (onPresentClick)="startPresentation()"
   >
-    @if (selectedElement) {
+    <div editorPrimaryActions class="editor-save-host">
+      @if (readOnly) {
+        <span class="read-only-badge">Solo lectura</span>
+      } @else {
+        @if (saveError) {
+          <span class="save-error">{{ saveError }}</span>
+        }
+        <div class="editor-category-select">
+          <app-select
+            [options]="categoryOptions"
+            [selectedValue]="presentationCategory"
+            ariaLabel="Categoría de la presentación"
+            (valueChange)="onCategoryChange($event)"
+          ></app-select>
+        </div>
+        <app-button variant="secondary" size="sm" [disabled]="saving" (onClick)="save()">
+          {{ saving ? 'Guardando...' : 'Guardar' }}
+        </app-button>
+      }
+    </div>
+    @if (selectedElement && !readOnly) {
       <div editorToolbar class="ribbon-bar ribbon-bar-subrow">
       <div class="ribbon-group ribbon-group-insert">
         <div class="ribbon-insert-stack">
@@ -29,6 +49,7 @@
             }
 
             @if (selectedElement.type === 'shape') {
+            <div class="ribbon-cluster ribbon-group-start">
               @if (!selectedElement.content.includes('arrow')) {
                 <div class="ribbon-texto-seg" role="group" aria-label="Fondo">
                   <button
@@ -118,9 +139,11 @@
                   </svg>
                 </button>
               </div>
+            </div>
             }
 
             @if (selectedElement.type === 'text') {
+            <div class="ribbon-cluster ribbon-group-start">
               <div class="ribbon-texto-seg" role="group" aria-label="Editar texto">
                 <button
                   type="button"
@@ -191,8 +214,10 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M10 12h10M6 18h14"/></svg>
                 </button>
               </div>
+            </div>
             }
 
+            <div class="ribbon-cluster ribbon-group-start">
             <div class="ribbon-texto-field">
               <label for="ribbon-width">Ancho</label>
               <div class="ribbon-size-control">
@@ -237,8 +262,9 @@
                 />
               </div>
             </div>
+            </div>
 
-            <div class="ribbon-texto-seg" role="group" aria-label="Orden de apilado">
+            <div class="ribbon-texto-seg ribbon-group-start" role="group" aria-label="Orden de apilado">
               <button
                 type="button"
                 class="ribbon-toggle"
@@ -287,7 +313,7 @@
               </button>
             </div>
 
-            <div class="ribbon-texto-seg">
+            <div class="ribbon-texto-seg ribbon-group-start">
               <button
                 type="button"
                 class="btn-delete-icon"
@@ -346,12 +372,27 @@
           </div>
         }
 
-        <a
-          routerLink="/"
-          [queryParams]="{ login: '1' }"
-          class="editor-menu-link"
-          (click)="editorMenuOpen = false"
-        >Iniciar sesión</a>
+        @if (auth.isLoggedIn) {
+          <div class="editor-menu-section">
+            <span class="editor-menu-section-title">Sesión</span>
+            <span class="editor-menu-muted">{{ auth.currentUser?.displayName }}</span>
+          </div>
+          @if (auth.currentUser?.isAdmin) {
+            <a routerLink="/admin" class="editor-menu-link" (click)="editorMenuOpen = false">Panel del maestro</a>
+          }
+          <button
+            type="button"
+            class="editor-menu-link editor-menu-link-button editor-menu-link-danger"
+            (click)="onMenuLogout()"
+          >Salir</button>
+        } @else {
+          <a
+            routerLink="/"
+            [queryParams]="{ login: '1' }"
+            class="editor-menu-link"
+            (click)="editorMenuOpen = false"
+          >Iniciar sesión</a>
+        }
 
         <a routerLink="/" class="editor-menu-link editor-menu-link-secondary" (click)="editorMenuOpen = false">Ir al inicio</a>
       </nav>
@@ -374,7 +415,8 @@
     </div>
   </aside>
 
-  <section class="workspace">
+  <section class="workspace" [class.workspace-readonly]="readOnly">
+    @if (!readOnly) {
     <aside class="tools-panel" aria-label="Herramientas de inserción">
       <button type="button" class="tool-btn" (click)="addSlide()" title="Nueva diapositiva" aria-label="Nueva diapositiva">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -499,6 +541,7 @@
         (change)="onImageFileSelected($event)"
       />
     </aside>
+    }
 
     <aside class="thumbs-panel">
       @for (slide of slides; let i = $index; track slide.id) {
@@ -507,7 +550,7 @@
           <button
             type="button"
             class="delete-thumb"
-            *ngIf="slides.length > 1"
+            *ngIf="slides.length > 1 && !readOnly"
             title="Eliminar diapositiva"
             aria-label="Eliminar diapositiva"
             (click)="deleteSlide(i); $event.stopPropagation()"
@@ -523,14 +566,17 @@
     <section class="canvas-area">
       <div
         class="main-canvas"
+        [class.main-canvas-viewer]="readOnly"
         #mainCanvas
+        [ngStyle]="readOnly ? getViewerCanvasStyle() : null"
         [style.background-color]="currentSlide.backgroundColor || '#ffffff'"
         (click)="clearSelection(); showShapeMenu = false"
       >
         @for (element of currentSlide.elements; track element.id) {
-          <div 
+          <div
             class="element"
             cdkDrag
+            [cdkDragDisabled]="readOnly"
             [style.left.px]="element.x"
             [style.top.px]="element.y"
             (cdkDragEnded)="onDragEnd($event, element)"
@@ -619,6 +665,32 @@
       </div>
     </section>
   </section>
+
+  @if (readOnly) {
+    <footer class="viewer-bar">
+      <a routerLink="/catalogo" class="viewer-btn viewer-btn-ghost">&larr; Volver al catálogo</a>
+      <div class="viewer-nav">
+        <button
+          type="button"
+          class="viewer-btn viewer-btn-icon"
+          [disabled]="currentSlideIndex === 0"
+          aria-label="Diapositiva anterior"
+          (click)="previousSlide()"
+        >&lsaquo;</button>
+        <span class="viewer-counter">{{ currentSlideIndex + 1 }} / {{ slides.length }}</span>
+        <button
+          type="button"
+          class="viewer-btn viewer-btn-icon"
+          [disabled]="currentSlideIndex === slides.length - 1"
+          aria-label="Siguiente diapositiva"
+          (click)="nextSlide()"
+        >&rsaquo;</button>
+      </div>
+      <div class="viewer-actions">
+        <button type="button" class="viewer-btn viewer-btn-primary" (click)="startPresentation()">Presentar</button>
+      </div>
+    </footer>
+  }
 
   @if (presentationMode) {
     <div

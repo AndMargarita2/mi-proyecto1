@@ -1,0 +1,60 @@
+<main class="admin-page">
+  <app-header
+    type="catalog"
+    logoText="D"
+    title="Panel del maestro"
+    searchPlaceholder="Busca entre los proyectos..."
+    [userDisplayName]="auth.currentUser?.displayName ?? null"
+    [isAdmin]="auth.currentUser?.isAdmin ?? false"
+  ></app-header>
+
+  <section class="admin-body">
+    <h1>Solicitudes de acceso pendientes</h1>
+    <p class="admin-subtitle">
+      Aprueba o rechaza a quienes pidieron una cuenta. Solo los usuarios aprobados pueden
+      iniciar sesión.
+    </p>
+
+    @if (errorMessage) {
+      <p class="admin-error">{{ errorMessage }}</p>
+    }
+
+    @if (loading) {
+      <p class="admin-empty">Cargando solicitudes...</p>
+    } @else if (solicitudes.length === 0) {
+      <p class="admin-empty">No hay solicitudes pendientes por ahora.</p>
+    } @else {
+      <div class="solicitudes-list">
+        @for (user of solicitudes; track user.id) {
+          <app-card variant="elevated" class="solicitud-card">
+            <div class="solicitud-row">
+              <div class="solicitud-info">
+                <p class="solicitud-name">{{ user.displayName }}</p>
+                <p class="solicitud-email">{{ user.email }}</p>
+                <p class="solicitud-date">Solicitado: {{ user.createdAt | date: 'short' }}</p>
+              </div>
+              <div class="solicitud-actions">
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  [disabled]="busyId === user.id"
+                  (onClick)="aprobar(user)"
+                >
+                  Aprobar
+                </app-button>
+                <app-button
+                  variant="danger"
+                  size="sm"
+                  [disabled]="busyId === user.id"
+                  (onClick)="rechazar(user)"
+                >
+                  Rechazar
+                </app-button>
+              </div>
+            </div>
+          </app-card>
+        }
+      </div>
+    }
+  </section>
+</main>

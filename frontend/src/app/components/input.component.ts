@@ -14,7 +14,6 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         [value]="value"
         [disabled]="disabled"
         (input)="onInput($event)"
-        (change)="onChange($event)"
         (blur)="onBlur()"
         [attr.aria-label]="ariaLabel"
         [class.error]="hasError"

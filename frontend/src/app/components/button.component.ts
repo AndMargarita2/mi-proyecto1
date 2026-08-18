@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'pill';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 @Component({
@@ -16,6 +16,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
       [class.secondary]="variant === 'secondary'"
       [class.danger]="variant === 'danger'"
       [class.ghost]="variant === 'ghost'"
+      [class.pill]="variant === 'pill'"
       [class.sm]="size === 'sm'"
       [class.md]="size === 'md'"
       [class.lg]="size === 'lg'"
@@ -92,6 +93,19 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
     .ghost:hover:not(:disabled) {
       background-color: #eff6ff;
+    }
+
+    .pill {
+      border-radius: 999px;
+      background: linear-gradient(90deg, #c026d3, #7c3aed);
+      color: white;
+      box-shadow: 0 4px 16px rgba(192, 38, 211, 0.28);
+    }
+
+    .pill:hover:not(:disabled) {
+      background: linear-gradient(90deg, #a21caf, #6d28d9);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(192, 38, 211, 0.4);
     }
 
     .sm {

@@ -1,48 +1,151 @@
 <main class="home">
-  <app-header 
+  <app-header
     type="main"
-    logoText="D"
     searchPlaceholder="Busca entre los proyectos..."
+    [userDisplayName]="auth.currentUser?.displayName ?? null"
+    [isAdmin]="auth.currentUser?.isAdmin ?? false"
+    (onLoginClick)="onLoginClick()"
+    (onLogoutClick)="onLogout()"
+    (searchSubmit)="onSearchSubmit($event)"
+    (onMenuClick)="menuOpen = !menuOpen"
   ></app-header>
+
+  @if (menuOpen) {
+    <div class="side-menu-backdrop" (click)="menuOpen = false" aria-hidden="true"></div>
+  }
+  <aside
+    class="side-menu"
+    [class.is-open]="menuOpen"
+    role="dialog"
+    [attr.aria-modal]="menuOpen ? 'true' : null"
+    [attr.aria-hidden]="!menuOpen"
+    aria-label="Menú principal"
+  >
+    <div class="side-menu-header">
+      <span class="side-menu-title">Menú</span>
+      <button type="button" class="side-menu-close" aria-label="Cerrar menú" (click)="menuOpen = false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav class="side-menu-nav" aria-label="Navegación principal">
+      <a routerLink="/catalogo" class="side-menu-link" (click)="menuOpen = false">Catálogo</a>
+      <a routerLink="/crear-presentacion" class="side-menu-link" (click)="menuOpen = false">Crear presentación</a>
+
+      @if (auth.isLoggedIn) {
+        <div class="side-menu-section">
+          <span class="side-menu-section-title">Sesión</span>
+          <span class="side-menu-muted">{{ auth.currentUser?.displayName }}</span>
+        </div>
+        @if (auth.currentUser?.isAdmin) {
+          <a routerLink="/admin" class="side-menu-link" (click)="menuOpen = false">Panel del maestro</a>
+        }
+        <button
+          type="button"
+          class="side-menu-link side-menu-link-button side-menu-link-danger"
+          (click)="onMenuLogout()"
+        >Salir</button>
+      } @else {
+        <button
+          type="button"
+          class="side-menu-link side-menu-link-button"
+          (click)="menuOpen = false; onLoginClick()"
+        >Iniciar sesión</button>
+      }
+    </nav>
+  </aside>
 
   <section class="hero">
     <div class="hero-content">
       <p class="tagline">Tus ideas, proyectadas</p>
       <h1>Crea presentaciones claras y atractivas en minutos</h1>
-      <app-button 
-        variant="primary" 
+      <app-button
+        variant="pill"
         size="lg"
         routerLink="/crear-presentacion"
       >
         Crea una nueva presentacion
       </app-button>
     </div>
-    <div class="hero-art" aria-hidden="true"></div>
-  </section>
-
-  <section class="catalog">
-    <app-button 
-      variant="secondary"
-      routerLink="/catalogo"
-    >
-      Catalogo
-    </app-button>
-    <div class="slider-track">
-      @for (card of presentationCards; track card.title) {
-        <app-card variant="elevated" [clickable]="true">
-          <div class="slide-image"></div>
-          <h3>{{ card.title }}</h3>
-        </app-card>
-      }
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-slide hero-slide-1"></div>
+      <div class="hero-slide hero-slide-2"></div>
+      <div class="hero-slide hero-slide-3"></div>
     </div>
   </section>
 
-  <section class="highlights">
-    @for (item of highlights; track item.title) {
-      <app-card variant="default" [clickable]="true">
-        <div class="feature-icon" aria-hidden="true"></div>
-        <h2>{{ item.title }}</h2>
-      </app-card>
+  @if (auth.isLoggedIn && myPresentations.length > 0) {
+    <section class="deck-section">
+      <div class="section-head">
+        <h2>Tus presentaciones</h2>
+        <a routerLink="/catalogo" class="see-all">Ver todo</a>
+      </div>
+      <div class="carousel">
+        <button
+          type="button"
+          class="carousel-nav carousel-nav-prev"
+          aria-label="Anterior"
+          (click)="scrollTrack(mineTrack, -1)"
+        >&lsaquo;</button>
+        <div class="slider-track" #mineTrack>
+          @for (item of myPresentations; track item.id) {
+            <app-card variant="elevated" [clickable]="true" (click)="openPresentation(item)">
+              <div class="slide-image"></div>
+              <div class="slide-card-body">
+                <h3>{{ item.title }}</h3>
+              </div>
+            </app-card>
+          }
+        </div>
+        <button
+          type="button"
+          class="carousel-nav carousel-nav-next"
+          aria-label="Siguiente"
+          (click)="scrollTrack(mineTrack, 1)"
+        >&rsaquo;</button>
+      </div>
+    </section>
+  }
+
+  <section class="deck-section">
+    <div class="section-head">
+      <h2>Explora el catálogo</h2>
+      <a routerLink="/catalogo" class="see-all">Ver todo</a>
+    </div>
+    @if (loading) {
+      <p class="catalog-loading">Cargando presentaciones...</p>
+    } @else if (otherPresentations.length === 0) {
+      <p class="catalog-loading">Todavia no hay presentaciones de la comunidad.</p>
+    } @else {
+      <div class="carousel">
+        <button
+          type="button"
+          class="carousel-nav carousel-nav-prev"
+          aria-label="Anterior"
+          (click)="scrollTrack(catalogTrack, -1)"
+        >&lsaquo;</button>
+        <div class="slider-track" #catalogTrack>
+          @for (item of otherPresentations; track item.id) {
+            <app-card variant="elevated" [clickable]="true" (click)="openPresentation(item)">
+              <div class="slide-image"></div>
+              <div class="slide-card-body">
+                <h3>{{ item.title }}</h3>
+              </div>
+            </app-card>
+          }
+        </div>
+        <button
+          type="button"
+          class="carousel-nav carousel-nav-next"
+          aria-label="Siguiente"
+          (click)="scrollTrack(catalogTrack, 1)"
+        >&rsaquo;</button>
+      </div>
     }
   </section>
+
+  <app-login-modal
+    [open]="loginModalOpen"
+    (closed)="onLoginModalClosed()"
+    (authenticated)="onAuthenticated()"
+  ></app-login-modal>
 </main>
