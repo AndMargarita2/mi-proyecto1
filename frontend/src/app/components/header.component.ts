@@ -148,8 +148,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
 
     header {
       padding: 16px 24px;
-      background-color: #0e2622;
-      border-bottom: 2px solid #22d3ee;
+      background-color: #1f2937;
+      border-bottom: 2px solid #2563eb;
       display: flex;
       align-items: center;
       gap: 20px;
@@ -198,8 +198,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     .editor-toolbar-row {
       width: 100%;
       overflow: visible;
-      background: #12211f;
-      border-bottom: 2px solid #22d3ee;
+      background: #1e293b;
+      border-bottom: 2px solid #2563eb;
     }
 
     .editor-toolbar-row:empty {
@@ -237,7 +237,7 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .menu-btn:hover span {
-      background-color: #22d3ee;
+      background-color: #2563eb;
     }
 
     .menu-btn span {
@@ -270,7 +270,7 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .mini-btn:hover span {
-      background-color: #22d3ee;
+      background-color: #60a5fa;
     }
 
     .mini-btn span {
@@ -329,8 +329,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .editor-title-input:focus {
-      border-color: #22d3ee;
-      box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.25);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
     }
 
     .user-chip {
@@ -345,18 +345,18 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
     }
 
     .admin-link {
-      color: #67e8f9;
+      color: #93c5fd;
       font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       white-space: nowrap;
-      border: 1px solid rgba(103, 232, 249, 0.4);
+      border: 1px solid rgba(96, 165, 250, 0.4);
       border-radius: 999px;
       padding: 6px 12px;
     }
 
     .admin-link:hover {
-      background: rgba(103, 232, 249, 0.1);
+      background: rgba(96, 165, 250, 0.1);
     }
 
     .left-group {
@@ -413,8 +413,8 @@ export type HeaderType = 'main' | 'catalog' | 'editor';
 
     :host ::ng-deep app-input input:focus {
       background-color: #4b5563 !important;
-      border-color: #22d3ee !important;
-      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2) !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
     }
   `]
 })

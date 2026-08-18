@@ -35,8 +35,11 @@
 
       @if (auth.isLoggedIn) {
         <div class="side-menu-section">
-          <span class="side-menu-section-title">Sesión</span>
-          <span class="side-menu-muted">{{ auth.currentUser?.displayName }}</span>
+          <span class="side-menu-avatar">{{ (auth.currentUser?.displayName || '?').charAt(0).toUpperCase() }}</span>
+          <span class="side-menu-section-text">
+            <span class="side-menu-section-title">Sesión</span>
+            <span class="side-menu-muted">{{ auth.currentUser?.displayName }}</span>
+          </span>
         </div>
         @if (auth.currentUser?.isAdmin) {
           <a routerLink="/admin" class="side-menu-link" (click)="menuOpen = false">Panel del maestro</a>

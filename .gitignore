@@ -1,0 +1,15 @@
+# Backend (Python / FastAPI)
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+backend/app.db
+
+# Frontend (Angular / pnpm)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Tooling
+.gstack/
+.DS_Store

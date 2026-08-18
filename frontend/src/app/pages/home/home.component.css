@@ -9,16 +9,16 @@
   min-height: 100vh;
   padding: 1.25rem 2rem 3rem;
   background:
-    radial-gradient(circle at 20% 20%, rgba(13, 130, 115, 0.35), transparent 32%),
-    radial-gradient(circle at 80% 10%, rgba(170, 30, 180, 0.25), transparent 40%),
+    radial-gradient(circle at 20% 20%, rgba(27, 104, 170, 0.35), transparent 32%),
+    radial-gradient(circle at 80% 10%, rgba(110, 15, 130, 0.28), transparent 40%),
     #040913;
 }
 
 .hero {
   margin-top: 1.25rem;
-  border: 1px solid rgba(34, 211, 238, 0.4);
+  border: 1px solid rgba(88, 144, 217, 0.35);
   border-radius: 1rem;
-  background: linear-gradient(130deg, rgba(11, 78, 72, 0.75), rgba(6, 20, 22, 0.95));
+  background: linear-gradient(130deg, rgba(13, 69, 107, 0.75), rgba(6, 20, 34, 0.95));
   min-height: 18rem;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -48,7 +48,9 @@
 
 .hero-art {
   position: relative;
-  background: linear-gradient(140deg, rgba(23, 84, 78, 0.35), rgba(8, 22, 20, 0.95));
+  background:
+    radial-gradient(circle at 75% 40%, rgba(54, 143, 227, 0.4), transparent 35%),
+    linear-gradient(140deg, rgba(38, 69, 101, 0.35), rgba(10, 20, 31, 0.95));
   overflow: hidden;
 }
 
@@ -114,7 +116,7 @@
 .see-all {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #67e8f9;
+  color: #93c5fd;
   text-decoration: none;
 }
 
@@ -137,7 +139,7 @@
   scroll-behavior: smooth;
   padding-bottom: 0.5rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.4) transparent;
+  scrollbar-color: rgba(88, 144, 217, 0.4) transparent;
 }
 
 .slider-track::-webkit-scrollbar {
@@ -145,7 +147,7 @@
 }
 
 .slider-track::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.4);
+  background: rgba(88, 144, 217, 0.4);
   border-radius: 999px;
 }
 
@@ -159,9 +161,9 @@
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 999px;
-  border: 1px solid rgba(34, 211, 238, 0.4);
-  background: rgba(8, 22, 20, 0.85);
-  color: #67e8f9;
+  border: 1px solid rgba(88, 144, 217, 0.4);
+  background: rgba(8, 21, 35, 0.85);
+  color: #93c5fd;
   font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
@@ -171,7 +173,7 @@
 }
 
 .carousel-nav:hover {
-  background: rgba(34, 211, 238, 0.18);
+  background: rgba(59, 130, 246, 0.18);
   transform: scale(1.06);
 }
 
@@ -184,8 +186,8 @@
 .slide-image {
   height: 9rem;
   background:
-    linear-gradient(120deg, rgba(20, 110, 105, 0.65), rgba(15, 37, 40, 0.9)),
-    radial-gradient(circle at 20% 20%, rgba(150, 240, 235, 0.4), transparent 35%);
+    linear-gradient(120deg, rgba(37, 85, 145, 0.65), rgba(20, 37, 58, 0.9)),
+    radial-gradient(circle at 20% 20%, rgba(180, 215, 255, 0.45), transparent 35%);
 }
 
 .slide-card-body {
@@ -240,11 +242,11 @@
   top: 0;
   left: 0;
   z-index: 1210;
-  width: min(300px, 92vw);
+  width: min(320px, 92vw);
   height: 100vh;
   background: #0f172a;
   border-right: 1px solid rgba(51, 65, 85, 0.9);
-  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
   transform: translateX(-100%);
   transition: transform 0.22s ease;
   display: flex;
@@ -252,6 +254,16 @@
   pointer-events: none;
   visibility: hidden;
   overflow: hidden;
+}
+
+.side-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
 
 .side-menu.is-open {
@@ -264,15 +276,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 14px;
+  padding: 20px 18px 16px;
   border-bottom: 1px solid rgba(51, 65, 85, 0.85);
 }
 
 .side-menu-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: #e2e8f0;
-  letter-spacing: 0.04em;
+  color: #93c5fd;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -280,45 +292,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 8px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
   color: #94a3b8;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .side-menu-close:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
 }
 
 .side-menu-nav {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  gap: 8px;
+  padding: 16px;
+  gap: 4px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .side-menu-link {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #cbd5e1;
   text-decoration: none;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .side-menu-link:hover {
-  background: rgba(34, 211, 238, 0.2);
-  border-color: rgba(103, 232, 249, 0.45);
+  background: rgba(37, 99, 235, 0.16);
+  border-left-color: #60a5fa;
+  color: #f8fafc;
+  transform: translateX(2px);
 }
 
 .side-menu-link-button {
@@ -326,39 +343,67 @@
   width: 100%;
   cursor: pointer;
   font-family: inherit;
+  margin-top: auto;
 }
 
 .side-menu-link-danger {
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.25);
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.18);
   border-color: rgba(248, 113, 113, 0.35);
+  border-left-color: rgba(248, 113, 113, 0.6);
 }
 
 .side-menu-link-danger:hover {
-  background: rgba(220, 38, 38, 0.35);
-  border-color: rgba(252, 165, 165, 0.55);
+  background: rgba(220, 38, 38, 0.28);
+  border-left-color: #f87171;
+  color: #fee2e2;
 }
 
 .side-menu-section {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 4px 0 8px;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.side-menu-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side-menu-section-text {
+  display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 0 4px;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.65);
-  margin-bottom: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .side-menu-section-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #94a3b8;
-  padding: 0 4px;
+  color: #64748b;
 }
 
 .side-menu-muted {
-  font-size: 11px;
-  color: #64748b;
-  padding: 0 4px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

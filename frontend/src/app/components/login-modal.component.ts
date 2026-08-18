@@ -151,8 +151,8 @@ type AuthMode = 'login' | 'register';
       padding: 32px 24px 26px;
       position: relative;
       border-radius: 16px;
-      background: linear-gradient(165deg, rgba(13, 40, 37, 0.98), rgba(6, 16, 15, 0.98));
-      border: 1px solid rgba(34, 211, 238, 0.4);
+      background: linear-gradient(165deg, rgba(13, 30, 48, 0.98), rgba(9, 12, 26, 0.98));
+      border: 1px solid rgba(88, 144, 217, 0.4);
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
     }
 
@@ -160,13 +160,13 @@ type AuthMode = 'login' | 'register';
       width: 2.4rem;
       height: 2.4rem;
       margin: 0 auto 14px;
-      border: 2px solid rgba(34, 211, 238, 0.65);
+      border: 2px solid rgba(88, 144, 217, 0.65);
       border-radius: 999px;
       display: grid;
       place-items: center;
       font-weight: 800;
       font-size: 1.15rem;
-      color: #67e8f9;
+      color: #93c5fd;
     }
 
     .modal-close {
@@ -237,8 +237,8 @@ type AuthMode = 'login' | 'register';
     }
 
     ::ng-deep .modal-card app-input input:focus {
-      border-color: #22d3ee !important;
-      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25) !important;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
     }
 
     ::ng-deep .modal-card app-input input.error {
@@ -265,7 +265,7 @@ type AuthMode = 'login' | 'register';
     }
 
     .mode-toggle span {
-      color: #67e8f9;
+      color: #93c5fd;
       font-weight: 600;
     }
 

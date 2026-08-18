@@ -373,9 +373,12 @@
         }
 
         @if (auth.isLoggedIn) {
-          <div class="editor-menu-section">
-            <span class="editor-menu-section-title">Sesión</span>
-            <span class="editor-menu-muted">{{ auth.currentUser?.displayName }}</span>
+          <div class="editor-menu-section editor-menu-section-session">
+            <span class="editor-menu-avatar">{{ (auth.currentUser?.displayName || '?').charAt(0).toUpperCase() }}</span>
+            <span class="editor-menu-section-text">
+              <span class="editor-menu-section-title">Sesión</span>
+              <span class="editor-menu-username">{{ auth.currentUser?.displayName }}</span>
+            </span>
           </div>
           @if (auth.currentUser?.isAdmin) {
             <a routerLink="/admin" class="editor-menu-link" (click)="editorMenuOpen = false">Panel del maestro</a>
